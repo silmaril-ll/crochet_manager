@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <metahtml lang="en" name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#F5F3EF">
@@ -712,7 +712,7 @@
                 const name = document.getElementById('sectionName').value.trim();
                 
                 if (!name) {
-                    alert('Please enter a section name');
+                    alert('请输入分区名称');
                     return;
                 }
 
@@ -770,7 +770,7 @@
                 const amount = document.getElementById('yarnAmount').value.trim();
 
                 if (!name) {
-                    alert('Please enter a yarn name');
+                    alert('请输入线材名称');
                     return;
                 }
 
@@ -808,7 +808,7 @@
                 const date = project.status === 'completed' && project.completed
                     ? new Date(project.completed).toLocaleDateString()
                     : new Date(project.created).toLocaleDateString();
-                const label = project.status === 'completed' ? 'Completed' : 'Created';
+                const label = project.status === 'completed' ? '已完成' : '创建时间：';
                 
                 return `
                     <div class="project-item ${project.id === data.currentProjectId ? 'active' : ''}" 
@@ -934,7 +934,7 @@
         }
 
         function resetCounter() {
-            if (!confirm('Reset this counter to 0?')) return;
+            if (!confirm('确认将计数器重置为 0？')) return;
             
             const project = data.projects.find(p => p.id === data.currentProjectId);
             const section = project.sections.find(s => s.id === data.currentSectionId);
@@ -997,9 +997,9 @@
                                 <div class="yarn-info">
                                     <div class="yarn-name">${yarn.name}</div>
                                     <div class="yarn-details">
-                                        ${yarn.brand ? `Brand: ${yarn.brand}` : ''}
+                                        ${yarn.brand ? `品牌： ${yarn.brand}` : ''}
                                         ${yarn.brand && yarn.amount ? ' • ' : ''}
-                                        ${yarn.amount ? `Amount: ${yarn.amount}` : ''}
+                                        ${yarn.amount ? `余量： ${yarn.amount}` : ''}
                                     </div>
                                 </div>
                                 <button class="delete-btn" onclick="deleteYarn(${yarn.id})">删除</button>
