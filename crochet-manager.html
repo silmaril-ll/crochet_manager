@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F5F3EF">
+    <title>Crochet Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #F5F3EF;
+            --bg-secondary: #FFFFFF;
+            --bg-hover: #E8E5DF;
+            --text-primary: #2C2416;
+            --text-secondary: #6B6356;
+            --border: #D4CFC4;
+            --accent: #B4916C;
+            --accent-hover: #9A7A5A;
+            --shadow: rgba(44, 36, 22, 0.08);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-280px);
+        }
+        
+        @media (min-width: 769px) {
+            .sidebar.collapsed ~ .main-content {
+                margin-left: -280px;
+            }
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-bar:focus {
+            border-color: var(--accent);
+        }
+
+        .project-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .project-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .project-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .project-item.active {
+            background: var(--bg-hover);
+        }
+
+        .project-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .project-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .project-tags {
+            font-size: 11px;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        .add-project-btn {
+            margin: 12px;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .add-project-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: margin-left 0.3s ease;
+        }
+
+        .top-bar {
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            color: var(--text-primary);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        /* Counter View */
+        .counter-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .project-header {
+            margin-bottom: 24px;
+        }
+
+        .project-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: var(--bg-hover);
+        }
+
+        .section-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .section-tab {
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .section-tab.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .section-tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .section-tab.active:hover {
+            background: var(--accent-hover);
+        }
+
+        .counter-display {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 48px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .counter-number {
+            font-size: 72px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 24px;
+        }
+
+        .counter-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .counter-btn {
+            width: 80px;
+            height: 80px;
+            font-size: 32px;
+            border: 2px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .counter-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .counter-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Yarn Inventory */
+        .yarn-list {
+            max-width: 800px;
+        }
+
+        .yarn-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .yarn-info {
+            flex: 1;
+        }
+
+        .yarn-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .yarn-details {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .delete-btn {
+            padding: 6px 12px;
+            background: none;
+            border: 1px solid #D44;
+            color: #D44;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #D44;
+            color: white;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: 0;
+                top: 57px; /* Start below the top bar */
+                bottom: 0;
+                z-index: 50; /* Lower than top bar */
+                box-shadow: 2px 0 8px var(--shadow);
+            }
+            
+            .sidebar.collapsed {
+                box-shadow: none;
+            }
+            
+            .top-bar {
+                position: relative;
+                z-index: 100; /* Higher than sidebar */
+            }
+            
+            .counter-number {
+                font-size: 56px;
+            }
+
+            .counter-btn {
+                width: 64px;
+                height: 64px;
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1 class="app-title">Crochet Manager</h1>
+                <input type="text" class="search-bar" id="searchBar" placeholder="Search projects...">
+            </div>
+            <div class="project-list" id="projectList"></div>
+            <button class="add-project-btn" id="addProjectBtn">+ New Project</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="projects">Projects</button>
+                    <button class="tab-btn" data-tab="yarn">Yarn Inventory</button>
+                </div>
+            </div>
+
+            <div class="content-area" id="contentArea">
+                <!-- Projects view -->
+                <div id="projectsView"></div>
+                
+                <!-- Yarn inventory view -->
+                <div id="yarnView" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <h2 class="modal-title">New Project</h2>
+            <div class="form-group">
+                <label class="form-label">Project Name</label>
+                <input type="text" class="form-input" id="projectName">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tags (comma separated)</label>
+                <input type="text" class="form-input" id="projectTags" placeholder="shawl, blanket, amigurumi">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelProject">Cancel</button>
+                <button class="btn btn-primary" id="saveProject">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Section Modal -->
+    <div class="modal" id="sectionModal">
+        <div class="modal-content">
+            <h2 class="modal-title">New Section</h2>
+            <div class="form-group">
+                <label class="form-label">Section Name</label>
+                <input type="text" class="form-input" id="sectionName" placeholder="中心区域">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelSection">Cancel</button>
+                <button class="btn btn-primary" id="saveSection">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Project Modal -->
+    <div class="modal" id="editProjectModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Edit Project</h2>
+            <div class="form-group">
+                <label class="form-label">Project Name</label>
+                <input type="text" class="form-input" id="editProjectName">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tags (comma separated)</label>
+                <input type="text" class="form-input" id="editProjectTags">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-input" id="editProjectStatus">
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelEditProject">Cancel</button>
+                <button class="btn btn-primary" id="saveEditProject">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Yarn Modal -->
+    <div class="modal" id="yarnModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Add Yarn</h2>
+            <div class="form-group">
+                <label class="form-label">Yarn Name</label>
+                <input type="text" class="form-input" id="yarnName">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Brand</label>
+                <input type="text" class="form-input" id="yarnBrand">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="text" class="form-input" id="yarnAmount" placeholder="200g or 3 skeins">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelYarn">Cancel</button>
+                <button class="btn btn-primary" id="saveYarn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        let data = {
+            projects: [],
+            yarn: [],
+            currentProjectId: null,
+            currentSectionId: null
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('crochetData');
+            if (saved) {
+                data = JSON.parse(saved);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('crochetData', JSON.stringify(data));
+        }
+
+        // Initialize app
+        function init() {
+            loadData();
+            renderProjects();
+            renderYarn();
+            setupEventListeners();
+            
+            if (data.projects.length > 0) {
+                selectProject(data.projects[0].id);
+            } else {
+                showEmptyProjectState();
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Menu toggle
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const tab = btn.dataset.tab;
+                    if (tab === 'projects') {
+                        document.getElementById('projectsView').style.display = 'block';
+                        document.getElementById('yarnView').style.display = 'none';
+                    } else {
+                        document.getElementById('projectsView').style.display = 'none';
+                        document.getElementById('yarnView').style.display = 'block';
+                    }
+                });
+            });
+
+            // Add project
+            document.getElementById('addProjectBtn').addEventListener('click', () => {
+                document.getElementById('projectName').value = '';
+                document.getElementById('projectTags').value = '';
+                document.getElementById('projectModal').classList.add('active');
+            });
+
+            document.getElementById('cancelProject').addEventListener('click', () => {
+                document.getElementById('projectModal').classList.remove('active');
+            });
+
+            document.getElementById('saveProject').addEventListener('click', () => {
+                const name = document.getElementById('projectName').value.trim();
+                const tags = document.getElementById('projectTags').value.trim();
+                
+                if (!name) {
+                    alert('Please enter a project name');
+                    return;
+                }
+
+                const project = {
+                    id: Date.now(),
+                    name: name,
+                    tags: tags ? tags.split(',').map(t => t.trim()) : [],
+                    created: new Date().toISOString(),
+                    status: 'in-progress',
+                    sections: [
+                        { id: Date.now(), name: 'Main', count: 0 }
+                    ]
+                };
+
+                data.projects.unshift(project);
+                saveData();
+                renderProjects();
+                selectProject(project.id);
+                document.getElementById('projectModal').classList.remove('active');
+            });
+
+            // Add section
+            document.getElementById('cancelSection').addEventListener('click', () => {
+                document.getElementById('sectionModal').classList.remove('active');
+            });
+
+            document.getElementById('saveSection').addEventListener('click', () => {
+                const name = document.getElementById('sectionName').value.trim();
+                
+                if (!name) {
+                    alert('Please enter a section name');
+                    return;
+                }
+
+                const project = data.projects.find(p => p.id === data.currentProjectId);
+                if (project) {
+                    project.sections.push({
+                        id: Date.now(),
+                        name: name,
+                        count: 0
+                    });
+                    saveData();
+                    renderProjectView();
+                    document.getElementById('sectionModal').classList.remove('active');
+                }
+            });
+
+            // Edit project
+            document.getElementById('cancelEditProject').addEventListener('click', () => {
+                document.getElementById('editProjectModal').classList.remove('active');
+            });
+
+            document.getElementById('saveEditProject').addEventListener('click', () => {
+                const project = data.projects.find(p => p.id === data.currentProjectId);
+                if (project) {
+                    project.name = document.getElementById('editProjectName').value.trim();
+                    project.tags = document.getElementById('editProjectTags').value.trim()
+                        .split(',').map(t => t.trim()).filter(t => t);
+                    project.status = document.getElementById('editProjectStatus').value;
+                    
+                    if (project.status === 'completed' && !project.completed) {
+                        project.completed = new Date().toISOString();
+                    }
+                    
+                    saveData();
+                    renderProjects();
+                    renderProjectView();
+                    document.getElementById('editProjectModal').classList.remove('active');
+                }
+            });
+
+            // Search
+            document.getElementById('searchBar').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                renderProjects(query);
+            });
+
+            // Add yarn
+            document.getElementById('cancelYarn').addEventListener('click', () => {
+                document.getElementById('yarnModal').classList.remove('active');
+            });
+
+            document.getElementById('saveYarn').addEventListener('click', () => {
+                const name = document.getElementById('yarnName').value.trim();
+                const brand = document.getElementById('yarnBrand').value.trim();
+                const amount = document.getElementById('yarnAmount').value.trim();
+
+                if (!name) {
+                    alert('Please enter a yarn name');
+                    return;
+                }
+
+                data.yarn.push({
+                    id: Date.now(),
+                    name: name,
+                    brand: brand,
+                    amount: amount
+                });
+
+                saveData();
+                renderYarn();
+                document.getElementById('yarnModal').classList.remove('active');
+                document.getElementById('yarnName').value = '';
+                document.getElementById('yarnBrand').value = '';
+                document.getElementById('yarnAmount').value = '';
+            });
+        }
+
+        // Render projects list
+        function renderProjects(query = '') {
+            const list = document.getElementById('projectList');
+            const filtered = data.projects.filter(p => {
+                if (!query) return true;
+                return p.name.toLowerCase().includes(query) ||
+                       p.tags.some(t => t.toLowerCase().includes(query));
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No projects found</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(project => {
+                const date = project.status === 'completed' && project.completed
+                    ? new Date(project.completed).toLocaleDateString()
+                    : new Date(project.created).toLocaleDateString();
+                const label = project.status === 'completed' ? 'Completed' : 'Created';
+                
+                return `
+                    <div class="project-item ${project.id === data.currentProjectId ? 'active' : ''}" 
+                         onclick="selectProject(${project.id})">
+                        <div class="project-name">${project.name}</div>
+                        <div class="project-meta">${label}: ${date}</div>
+                        ${project.tags.length > 0 ? `<div class="project-tags">${project.tags.join(', ')}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Select a project
+        function selectProject(id) {
+            data.currentProjectId = id;
+            const project = data.projects.find(p => p.id === id);
+            if (project && project.sections.length > 0) {
+                data.currentSectionId = project.sections[0].id;
+            }
+            renderProjects();
+            renderProjectView();
+        }
+
+        // Show empty project state
+        function showEmptyProjectState() {
+            document.getElementById('projectsView').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🧶</div>
+                    <p>No projects yet. Click the + button to create your first project!</p>
+                </div>
+            `;
+        }
+
+        // Render current project view
+        function renderProjectView() {
+            const project = data.projects.find(p => p.id === data.currentProjectId);
+            if (!project) {
+                showEmptyProjectState();
+                return;
+            }
+
+            const section = project.sections.find(s => s.id === data.currentSectionId);
+            
+            document.getElementById('projectsView').innerHTML = `
+                <div class="counter-container">
+                    <div class="project-header">
+                        <h2 class="project-title">${project.name}</h2>
+                        <div class="project-actions">
+                            <button class="btn-small" onclick="editProject()">Edit Project</button>
+                            <button class="btn-small" onclick="addSection()">+ Add Section</button>
+                            ${project.sections.length > 1 ? `<button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteCurrentSection()">Delete Section</button>` : ''}
+                            <button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteProject()">Delete Project</button>
+                        </div>
+                    </div>
+
+                    <div class="section-tabs">
+                        ${project.sections.map(s => `
+                            <div class="section-tab ${s.id === data.currentSectionId ? 'active' : ''}" 
+                                 onclick="selectSection(${s.id})">
+                                ${s.name}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="counter-display">
+                        <div class="counter-number">${section.count}</div>
+                        <div class="counter-buttons">
+                            <button class="counter-btn" onclick="decrementCounter()">−</button>
+                            <button class="counter-btn" onclick="resetCounter()">↻</button>
+                            <button class="counter-btn" onclick="incrementCounter()">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Section management
+        function selectSection(id) {
+            data.currentSectionId = id;
+            renderProjectView();
+        }
+
+        function addSection() {
+            document.getElementById('sectionName').value = '';
+            document.getElementById('sectionModal').classList.add('active');
+        }
+
+        function deleteSection(id) {
+            if (!confirm('Delete this section?')) return;
+            
+            const project = data.projects.find(p => p.id === data.currentProjectId);
+            if (project) {
+                project.sections = project.sections.filter(s => s.id !== id);
+                if (data.currentSectionId === id && project.sections.length > 0) {
+                    data.currentSectionId = project.sections[0].id;
+                }
+                saveData();
+                renderProjectView();
+            }
+        }
+
+        function deleteCurrentSection() {
+            deleteSection(data.currentSectionId);
+        }
+
+        // Counter operations
+        function incrementCounter() {
+            const project = data.projects.find(p => p.id === data.currentProjectId);
+            const section = project.sections.find(s => s.id === data.currentSectionId);
+            section.count++;
+            saveData();
+            renderProjectView();
+        }
+
+        function decrementCounter() {
+            const project = data.projects.find(p => p.id === data.currentProjectId);
+            const section = project.sections.find(s => s.id === data.currentSectionId);
+            if (section.count > 0) {
+                section.count--;
+                saveData();
+                renderProjectView();
+            }
+        }
+
+        function resetCounter() {
+            if (!confirm('Reset this counter to 0?')) return;
+            
+            const project = data.projects.find(p => p.id === data.currentProjectId);
+            const section = project.sections.find(s => s.id === data.currentSectionId);
+            section.count = 0;
+            saveData();
+            renderProjectView();
+        }
+
+        // Project management
+        function editProject() {
+            const project = data.projects.find(p => p.id === data.currentProjectId);
+            if (project) {
+                document.getElementById('editProjectName').value = project.name;
+                document.getElementById('editProjectTags').value = project.tags.join(', ');
+                document.getElementById('editProjectStatus').value = project.status;
+                document.getElementById('editProjectModal').classList.add('active');
+            }
+        }
+
+        function deleteProject() {
+            if (!confirm('Delete this project? This cannot be undone.')) return;
+            
+            data.projects = data.projects.filter(p => p.id !== data.currentProjectId);
+            saveData();
+            
+            if (data.projects.length > 0) {
+                selectProject(data.projects[0].id);
+            } else {
+                data.currentProjectId = null;
+                data.currentSectionId = null;
+                showEmptyProjectState();
+            }
+            renderProjects();
+        }
+
+        // Render yarn inventory
+        function renderYarn() {
+            const view = document.getElementById('yarnView');
+            
+            if (data.yarn.length === 0) {
+                view.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🧵</div>
+                        <p>No yarn in inventory yet.</p>
+                        <button class="btn btn-primary" style="margin-top: 16px; max-width: 200px;" onclick="openYarnModal()">Add Yarn</button>
+                    </div>
+                `;
+                return;
+            }
+
+            view.innerHTML = `
+                <div style="max-width: 800px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="font-size: 24px; font-weight: 600;">Yarn Inventory</h2>
+                        <button class="btn btn-primary" style="width: auto; max-width: 150px;" onclick="openYarnModal()">+ Add Yarn</button>
+                    </div>
+                    <div class="yarn-list">
+                        ${data.yarn.map(yarn => `
+                            <div class="yarn-item">
+                                <div class="yarn-info">
+                                    <div class="yarn-name">${yarn.name}</div>
+                                    <div class="yarn-details">
+                                        ${yarn.brand ? `Brand: ${yarn.brand}` : ''}
+                                        ${yarn.brand && yarn.amount ? ' • ' : ''}
+                                        ${yarn.amount ? `Amount: ${yarn.amount}` : ''}
+                                    </div>
+                                </div>
+                                <button class="delete-btn" onclick="deleteYarn(${yarn.id})">Delete</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function openYarnModal() {
+            document.getElementById('yarnModal').classList.add('active');
+        }
+
+        function deleteYarn(id) {
+            if (!confirm('Delete this yarn?')) return;
+            data.yarn = data.yarn.filter(y => y.id !== id);
+            saveData();
+            renderYarn();
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
