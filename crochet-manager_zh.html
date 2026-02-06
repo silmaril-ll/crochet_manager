@@ -2,7 +2,7 @@
 <html lang="zh-CN">>
 <head>
     <meta charset="UTF-8">
-    <metahtml lang="en" name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#F5F3EF">
@@ -32,6 +32,12 @@
             color: var(--text-primary);
             height: 100vh;
             overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        button {
+            color: var(--text-primary);
+            font-family: inherit;
         }
 
         .app-container {
@@ -181,6 +187,7 @@
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
+            color: var(--text-primary);
         }
 
         .tab-btn.active {
@@ -311,6 +318,9 @@
         /* Yarn Inventory */
         .yarn-list {
             max-width: 800px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 4px;
         }
 
         .yarn-item {
@@ -508,7 +518,7 @@
                 <button class="menu-toggle" id="menuToggle">☰</button>
                 <div class="tab-buttons">
                     <button class="tab-btn active" data-tab="projects">项目</button>
-                    <button class="tab-btn" data-tab="yarn">毛线库存</button>
+                    <button class="tab-btn" data-tab="yarn">线材库存</button>
                 </div>
             </div>
 
@@ -805,16 +815,17 @@
             }
 
             list.innerHTML = filtered.map(project => {
-                const date = project.status === 'completed' && project.completed
+                const createdDate = new Date(project.created).toLocaleDateString();
+                const completedDate = project.status === 'completed' && project.completed
                     ? new Date(project.completed).toLocaleDateString()
-                    : new Date(project.created).toLocaleDateString();
-                const label = project.status === 'completed' ? '已完成' : '创建时间：';
+                    : null;
                 
                 return `
                     <div class="project-item ${project.id === data.currentProjectId ? 'active' : ''}" 
                          onclick="selectProject(${project.id})">
                         <div class="project-name">${project.name}</div>
-                        <div class="project-meta">${label}: ${date}</div>
+                        <div class="project-meta">创建日期: ${createdDate}</div>
+                        ${completedDate ? `<div class="project-meta">完成日期: ${completedDate}</div>` : ''}
                         ${project.tags.length > 0 ? `<div class="project-tags">${project.tags.join(', ')}</div>` : ''}
                     </div>
                 `;
@@ -997,9 +1008,8 @@
                                 <div class="yarn-info">
                                     <div class="yarn-name">${yarn.name}</div>
                                     <div class="yarn-details">
-                                        ${yarn.brand ? `品牌： ${yarn.brand}` : ''}
-                                        ${yarn.brand && yarn.amount ? ' • ' : ''}
-                                        ${yarn.amount ? `余量： ${yarn.amount}` : ''}
+                                        ${yarn.brand ? `<div>品牌：${yarn.brand}</div>` : ''}
+                                        ${yarn.amount ? `<div>数量：${yarn.amount}</div>` : ''}
                                     </div>
                                 </div>
                                 <button class="delete-btn" onclick="deleteYarn(${yarn.id})">删除</button>
