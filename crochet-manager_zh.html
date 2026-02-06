@@ -24,6 +24,7 @@
             --accent: #B4916C;
             --accent-hover: #9A7A5A;
             --shadow: rgba(44, 36, 22, 0.08);
+            --top-bar-height: 64px;
         }
 
         body {
@@ -163,6 +164,7 @@
             display: flex;
             align-items: center;
             gap: 16px;
+            height: var(--top-bar-height);
         }
 
         .menu-toggle {
@@ -473,7 +475,7 @@
             .sidebar {
                 position: absolute;
                 left: 0;
-                top: 57px; /* Start below the top bar */
+                top: var(--top-bar-height); /* Start below the top bar */
                 bottom: 0;
                 z-index: 50; /* Lower than top bar */
                 box-shadow: 2px 0 8px var(--shadow);
