@@ -105,6 +105,10 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
         }
 
         .project-item:hover {
@@ -131,6 +135,33 @@
             margin-top: 4px;
         }
 
+        .project-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .drag-handle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            cursor: grab;
+            padding: 4px 6px;
+            border-radius: 6px;
+            user-select: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .dragging {
+            opacity: 0.6;
+        }
+
+        .drag-over {
+            outline: 2px dashed var(--accent);
+            outline-offset: 2px;
+        }
+        
         .add-project-btn {
             margin: 12px;
             padding: 12px;
@@ -334,6 +365,7 @@
             display: flex;
             justify-content: space-between;
             align-items: start;
+            gap: 16px;
         }
 
         .yarn-info {
@@ -349,6 +381,27 @@
         .yarn-details {
             font-size: 14px;
             color: var(--text-secondary);
+        }
+
+        .yarn-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .yarn-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .yarn-btn:hover {
+            background: var(--bg-hover);
         }
 
         .delete-btn {
@@ -597,7 +650,7 @@
     <!-- Add Yarn Modal -->
     <div class="modal" id="yarnModal">
         <div class="modal-content">
-            <h2 class="modal-title">添加线材</h2>
+            <h2 class="modal-title" id="yarnModalTitle">添加线材</h2>
             <div class="form-group">
                 <label class="form-label">线材名称</label>
                 <input type="text" class="form-input" id="yarnName">
@@ -624,6 +677,7 @@
             yarn: [],
             currentProjectId: null,
             currentSectionId: null
+            currentYarnId: null
         };
 
         // Load data from localStorage
@@ -774,6 +828,373 @@
             // Add yarn
             document.getElementById('cancelYarn').addEventListener('click', () => {
                 document.getElementById('yarnModal').classList.remove('active');
+                data.currentYarnId = null;
+            });
+
+            document.getElementById('saveYarn').addEventListener('click', () => {
+                const name = document.getElementById('yarnName').value.trim();
+                const brand = document.getElementById('yarnBrand').value.trim();
+                const amount = document.getElementById('yarnAmount').value.trim();
+
+                if (!name) {
+                    alert('请输入线材名称');
+                    return;
+                }
+
+               if (data.currentYarnId) {
+                    const yarn = data.yarn.find(item => item.id === data.currentYarnId);
+                    if (yarn) {
+                        yarn.name = name;
+                        yarn.brand = brand;
+                        yarn.amount = amount;
+                    }
+                } else {
+                    data.yarn.push({
+                        id: Date.now(),
+                        name: name,
+                        brand: brand,
+                        amount: amount
+                    });
+                }
+
+                saveData();
+                renderYarn();
+                document.getElementById('yarnModal').classList.remove('active');
+                document.getElementById('yarnName').value = '';
+                document.getElementById('yarnBrand').value = '';
+                document.getElementById('yarnAmount').value = '';
+                data.currentYarnId = null;
+            });
+        }
+
+        // Render projects list
+        function renderProjects(query = '') {
+            const list = document.getElementById('projectList');
+            const filtered = data.projects.filter(p => {
+                if (!query) return true;
+                return p.name.toLowerCase().includes(query) ||
+                       p.tags.some(t => t.toLowerCase().includes(query));
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">暂未添加项目</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(project => {
+                const createdDate = new Date(project.created).toLocaleDateString();
+                const completedDate = project.status === 'completed' && project.completed
+                    ? new Date(project.completed).toLocaleDateString()
+                    : null;
+                
+                return `
+                    <div class="project-item ${project.id === data.currentProjectId ? 'active' : ''}" 
+                         @@ -83,76 +83,107 @@
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-bar:focus {
+            border-color: var(--accent);
+        }
+
+        .project-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .project-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .project-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .project-item.active {
+            background: var(--bg-hover);
+        }
+
+        .project-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .project-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .project-tags {
+            font-size: 11px;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        .project-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .drag-handle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            cursor: grab;
+            padding: 4px 6px;
+            border-radius: 6px;
+            user-select: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .dragging {
+            opacity: 0.6;
+        }
+
+        .drag-over {
+            outline: 2px dashed var(--accent);
+            outline-offset: 2px;
+        }
+
+        .add-project-btn {
+            margin: 12px;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .add-project-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: margin-left 0.3s ease;
+        }
+@@ -312,67 +343,89 @@
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .counter-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Yarn Inventory */
+        .yarn-list {
+            max-width: 800px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .yarn-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 16px;
+        }
+
+        .yarn-info {
+            flex: 1;
+        }
+
+        .yarn-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .yarn-details {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .yarn-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .yarn-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .yarn-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        .delete-btn {
+            padding: 6px 12px;
+            background: none;
+            border: 1px solid #D44;
+            color: #D44;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #D44;
+            color: white;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+@@ -575,77 +628,78 @@
+            <div class="form-group">
+                <label class="form-label">项目名称</label>
+                <input type="text" class="form-input" id="editProjectName">
+            </div>
+            <div class="form-group">
+                <label class="form-label">标签（用逗号分隔）</label>
+                <input type="text" class="form-input" id="editProjectTags">
+            </div>
+            <div class="form-group">
+                <label class="form-label">状态</label>
+                <select class="form-input" id="editProjectStatus">
+                    <option value="in-progress">进行中</option>
+                    <option value="completed">已完成</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelEditProject">取消</button>
+                <button class="btn btn-primary" id="saveEditProject">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Yarn Modal -->
+    <div class="modal" id="yarnModal">
+        <div class="modal-content">
+            <h2 class="modal-title">添加线材</h2>
+            <h2 class="modal-title" id="yarnModalTitle">添加线材</h2>
+            <div class="form-group">
+                <label class="form-label">线材名称</label>
+                <input type="text" class="form-input" id="yarnName">
+            </div>
+            <div class="form-group">
+                <label class="form-label">品牌</label>
+                <input type="text" class="form-input" id="yarnBrand">
+            </div>
+            <div class="form-group">
+                <label class="form-label">数量</label>
+                <input type="text" class="form-input" id="yarnAmount" placeholder="200g，1卷，一扣扣等">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelYarn">取消</button>
+                <button class="btn btn-primary" id="saveYarn">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        let data = {
+            projects: [],
+            yarn: [],
+            currentProjectId: null,
+            currentSectionId: null
+            currentSectionId: null,
+            currentYarnId: null
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('crochetData');
+            if (saved) {
+                data = JSON.parse(saved);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('crochetData', JSON.stringify(data));
+        }
+
+        // Initialize app
+        function init() {
+            loadData();
+            renderProjects();
+            renderYarn();
+            setupEventListeners();
+            
+            if (data.projects.length > 0) {
+                selectProject(data.projects[0].id);
+            } else {
+@@ -752,108 +806,126 @@
+                    project.name = document.getElementById('editProjectName').value.trim();
+                    project.tags = document.getElementById('editProjectTags').value.trim()
+                        .split(',').map(t => t.trim()).filter(t => t);
+                    project.status = document.getElementById('editProjectStatus').value;
+                    
+                    if (project.status === 'completed' && !project.completed) {
+                        project.completed = new Date().toISOString();
+                    }
+                    
+                    saveData();
+                    renderProjects();
+                    renderProjectView();
+                    document.getElementById('editProjectModal').classList.remove('active');
+                }
+            });
+
+            // Search
+            document.getElementById('searchBar').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                renderProjects(query);
+            });
+
+            // Add yarn
+            document.getElementById('cancelYarn').addEventListener('click', () => {
+                document.getElementById('yarnModal').classList.remove('active');
+                data.currentYarnId = null;
             });
 
             document.getElementById('saveYarn').addEventListener('click', () => {
@@ -792,6 +1213,21 @@
                     brand: brand,
                     amount: amount
                 });
+                if (data.currentYarnId) {
+                    const yarn = data.yarn.find(item => item.id === data.currentYarnId);
+                    if (yarn) {
+                        yarn.name = name;
+                        yarn.brand = brand;
+                        yarn.amount = amount;
+                    }
+                } else {
+                    data.yarn.push({
+                        id: Date.now(),
+                        name: name,
+                        brand: brand,
+                        amount: amount
+                    });
+                }
 
                 saveData();
                 renderYarn();
@@ -799,6 +1235,7 @@
                 document.getElementById('yarnName').value = '';
                 document.getElementById('yarnBrand').value = '';
                 document.getElementById('yarnAmount').value = '';
+                data.currentYarnId = null;
             });
         }
 
@@ -829,9 +1266,21 @@
                         <div class="project-meta">创建日期: ${createdDate}</div>
                         ${completedDate ? `<div class="project-meta">完成日期: ${completedDate}</div>` : ''}
                         ${project.tags.length > 0 ? `<div class="project-tags">${project.tags.join(', ')}</div>` : ''}
+                         onclick="selectProject(${project.id})"
+                         draggable="true"
+                         data-project-id="${project.id}">
+                        <div class="project-content">
+                            <div class="project-name">${project.name}</div>
+                            <div class="project-meta">创建日期: ${createdDate}</div>
+                            ${completedDate ? `<div class="project-meta">完成日期: ${completedDate}</div>` : ''}
+                            ${project.tags.length > 0 ? `<div class="project-tags">${project.tags.join(', ')}</div>` : ''}
+                        </div>
+                        <span class="drag-handle" title="拖拽排序">☰</span>
                     </div>
                 `;
             }).join('');
+
+            setupProjectDrag();
         }
 
         // Select a project
@@ -1006,7 +1455,7 @@
                     </div>
                     <div class="yarn-list">
                         ${data.yarn.map(yarn => `
-                            <div class="yarn-item">
+                            <div class="yarn-item" draggable="true" data-yarn-id="${yarn.id}">
                                 <div class="yarn-info">
                                     <div class="yarn-name">${yarn.name}</div>
                                     <div class="yarn-details">
@@ -1014,21 +1463,168 @@
                                         ${yarn.amount ? `<div>数量：${yarn.amount}</div>` : ''}
                                     </div>
                                 </div>
-                                <button class="delete-btn" onclick="deleteYarn(${yarn.id})">删除</button>
+                                <div class="yarn-actions">
+                                    <span class="drag-handle" title="拖拽排序">☰</span>
+                                    <button class="yarn-btn" onclick="editYarn(${yarn.id})">编辑</button>
+                                    <button class="delete-btn" onclick="deleteYarn(${yarn.id})">删除</button>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
                 </div>
             `;
+
+            setupYarnDrag();
         }
 
         function openYarnModal() {
+            document.getElementById('yarnModalTitle').textContent = '添加线材';
+            document.getElementById('saveYarn').textContent = '添加';
+            document.getElementById('yarnName').value = '';
+            document.getElementById('yarnBrand').value = '';
+            document.getElementById('yarnAmount').value = '';
+            data.currentYarnId = null;
+            document.getElementById('yarnModal').classList.add('active');
+        }
+
+        function editYarn(id) {
+            const yarn = data.yarn.find(item => item.id === id);
+            if (!yarn) return;
+            data.currentYarnId = id;
+            document.getElementById('yarnModalTitle').textContent = '编辑线材';
+            document.getElementById('saveYarn').textContent = '保存';
+            document.getElementById('yarnName').value = yarn.name;
+            document.getElementById('yarnBrand').value = yarn.brand;
+            document.getElementById('yarnAmount').value = yarn.amount;
             document.getElementById('yarnModal').classList.add('active');
         }
 
         function deleteYarn(id) {
             if (!confirm('确认删除该线材？')) return;
             data.yarn = data.yarn.filter(y => y.id !== id);
+            saveData();
+            renderYarn();
+        }
+
+        function setupProjectDrag() {
+            const list = document.getElementById('projectList');
+            if (!list.dataset.dragBound) {
+                list.addEventListener('dragover', handleProjectDragOver);
+                list.addEventListener('drop', handleProjectDrop);
+                list.addEventListener('dragleave', handleProjectDragLeave);
+                list.dataset.dragBound = 'true';
+            }
+
+            list.querySelectorAll('.project-item').forEach(item => {
+                item.addEventListener('dragstart', handleProjectDragStart);
+                item.addEventListener('dragend', handleProjectDragEnd);
+            });
+        }
+
+        function handleProjectDragStart(event) {
+            event.currentTarget.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', event.currentTarget.dataset.projectId);
+        }
+
+        function handleProjectDragEnd(event) {
+            event.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.project-item').forEach(item => item.classList.remove('drag-over'));
+        }
+
+        function handleProjectDragOver(event) {
+            event.preventDefault();
+            const target = event.target.closest('.project-item');
+            if (target && !target.classList.contains('dragging')) {
+                document.querySelectorAll('.project-item').forEach(item => item.classList.remove('drag-over'));
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleProjectDragLeave(event) {
+            const target = event.target.closest('.project-item');
+            if (target) {
+                target.classList.remove('drag-over');
+            }
+        }
+
+        function handleProjectDrop(event) {
+            event.preventDefault();
+            const target = event.target.closest('.project-item');
+            if (!target) return;
+
+            const draggedId = parseInt(event.dataTransfer.getData('text/plain'), 10);
+            const targetId = parseInt(target.dataset.projectId, 10);
+            if (!draggedId || !targetId || draggedId === targetId) return;
+
+            const fromIndex = data.projects.findIndex(item => item.id === draggedId);
+            const toIndex = data.projects.findIndex(item => item.id === targetId);
+            if (fromIndex === -1 || toIndex === -1) return;
+
+            const [moved] = data.projects.splice(fromIndex, 1);
+            data.projects.splice(toIndex, 0, moved);
+            saveData();
+            renderProjects(document.getElementById('searchBar').value.trim().toLowerCase());
+        }
+
+        function setupYarnDrag() {
+            const list = document.querySelector('.yarn-list');
+            if (!list) return;
+            if (!list.dataset.dragBound) {
+                list.addEventListener('dragover', handleYarnDragOver);
+                list.addEventListener('drop', handleYarnDrop);
+                list.addEventListener('dragleave', handleYarnDragLeave);
+                list.dataset.dragBound = 'true';
+            }
+
+            list.querySelectorAll('.yarn-item').forEach(item => {
+                item.addEventListener('dragstart', handleYarnDragStart);
+                item.addEventListener('dragend', handleYarnDragEnd);
+            });
+        }
+
+        function handleYarnDragStart(event) {
+            event.currentTarget.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', event.currentTarget.dataset.yarnId);
+        }
+
+        function handleYarnDragEnd(event) {
+            event.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.yarn-item').forEach(item => item.classList.remove('drag-over'));
+        }
+
+        function handleYarnDragOver(event) {
+            event.preventDefault();
+            const target = event.target.closest('.yarn-item');
+            if (target && !target.classList.contains('dragging')) {
+                document.querySelectorAll('.yarn-item').forEach(item => item.classList.remove('drag-over'));
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleYarnDragLeave(event) {
+            const target = event.target.closest('.yarn-item');
+            if (target) {
+                target.classList.remove('drag-over');
+            }
+        }
+
+        function handleYarnDrop(event) {
+            event.preventDefault();
+            const target = event.target.closest('.yarn-item');
+            if (!target) return;
+
+            const draggedId = parseInt(event.dataTransfer.getData('text/plain'), 10);
+            const targetId = parseInt(target.dataset.yarnId, 10);
+            if (!draggedId || !targetId || draggedId === targetId) return;
+
+            const fromIndex = data.yarn.findIndex(item => item.id === draggedId);
+            const toIndex = data.yarn.findIndex(item => item.id === targetId);
+            if (fromIndex === -1 || toIndex === -1) return;
+
+            const [moved] = data.yarn.splice(fromIndex, 1);
+            data.yarn.splice(toIndex, 0, moved);
             saveData();
             renderYarn();
         }
