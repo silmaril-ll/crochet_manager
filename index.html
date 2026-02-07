@@ -161,23 +161,6 @@
             outline: 2px dashed var(--accent);
             outline-offset: 2px;
         }
-        
-        .add-project-btn {
-            margin: 12px;
-            padding: 12px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-
-        .add-project-btn:hover {
-            background: var(--accent-hover);
-        }
 
         /* Main Content */
         .main-content {
@@ -564,7 +547,6 @@
                 <input type="text" class="search-bar" id="searchBar" placeholder="搜索项目名称或标签…">
             </div>
             <div class="project-list" id="projectList"></div>
-            <button class="add-project-btn" id="addProjectBtn">+ 新项目</button>
         </div>
 
         <!-- Main Content -->
@@ -729,13 +711,6 @@
                         document.getElementById('yarnView').style.display = 'block';
                     }
                 });
-            });
-
-            // Add project
-            document.getElementById('addProjectBtn').addEventListener('click', () => {
-                document.getElementById('projectName').value = '';
-                document.getElementById('projectTags').value = '';
-                document.getElementById('projectModal').classList.add('active');
             });
 
             document.getElementById('cancelProject').addEventListener('click', () => {
@@ -922,7 +897,8 @@
             document.getElementById('projectsView').innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">🧶</div>
-                    <p>暂未添加项目。点击 + 按钮创建第一个项目吧~</p>
+                    <p>暂未添加项目。</p>
+                    <button class="btn btn-primary" style="margin-top: 16px; max-width: 200px;" onclick="openProjectModal()">添加编织项目</button>
                 </div>
             `;
         }
@@ -938,32 +914,38 @@
             const section = project.sections.find(s => s.id === data.currentSectionId);
             
             document.getElementById('projectsView').innerHTML = `
-                <div class="counter-container">
-                    <div class="project-header">
-                        <h2 class="project-title">${project.name}</h2>
-                        <div class="project-actions">
-                            <button class="btn-small" onclick="editProject()">编辑项目</button>
-                            <button class="btn-small" onclick="addSection()">+ 添加分区</button>
-                            ${project.sections.length > 1 ? `<button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteCurrentSection()">删除分区</button>` : ''}
-                            <button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteProject()">删除项目</button>
-                        </div>
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="font-size: 24px; font-weight: 600;">项目</h2>
+                        <button class="btn btn-primary" style="width: auto; max-width: 150px;" onclick="openProjectModal()">+ 新项目</button>
                     </div>
-
-                    <div class="section-tabs">
-                        ${project.sections.map(s => `
-                            <div class="section-tab ${s.id === data.currentSectionId ? 'active' : ''}" 
-                                 onclick="selectSection(${s.id})">
-                                ${s.name}
+                    <div class="counter-container" style="max-width: 600px;">
+                        <div class="project-header">
+                            <h2 class="project-title">${project.name}</h2>
+                            <div class="project-actions">
+                                <button class="btn-small" onclick="editProject()">编辑项目</button>
+                                <button class="btn-small" onclick="addSection()">+ 添加分区</button>
+                                ${project.sections.length > 1 ? `<button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteCurrentSection()">删除分区</button>` : ''}
+                                <button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteProject()">删除项目</button>
                             </div>
-                        `).join('')}
-                    </div>
+                        </div>
 
-                    <div class="counter-display">
-                        <div class="counter-number">${section.count}</div>
-                        <div class="counter-buttons">
-                            <button class="counter-btn" onclick="decrementCounter()">−</button>
-                            <button class="counter-btn" onclick="resetCounter()">↻</button>
-                            <button class="counter-btn" onclick="incrementCounter()">+</button>
+                        <div class="section-tabs">
+                            ${project.sections.map(s => `
+                                <div class="section-tab ${s.id === data.currentSectionId ? 'active' : ''}" 
+                                     onclick="selectSection(${s.id})">
+                                    ${s.name}
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="counter-display">
+                            <div class="counter-number">${section.count}</div>
+                            <div class="counter-buttons">
+                                <button class="counter-btn" onclick="decrementCounter()">−</button>
+                                <button class="counter-btn" onclick="resetCounter()">↻</button>
+                                <button class="counter-btn" onclick="incrementCounter()">+</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1128,6 +1110,12 @@
             data.yarn = data.yarn.filter(y => y.id !== id);
             saveData();
             renderYarn();
+        }
+
+        function openProjectModal() {
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectTags').value = '';
+            document.getElementById('projectModal').classList.add('active');
         }
 
         // Drag and drop for projects
