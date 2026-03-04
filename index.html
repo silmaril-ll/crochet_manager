@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#F5F3EF">
@@ -24,7 +24,6 @@
             --accent: #B4916C;
             --accent-hover: #9A7A5A;
             --shadow: rgba(44, 36, 22, 0.08);
-            --top-bar-height: 64px;
         }
 
         body {
@@ -33,12 +32,6 @@
             color: var(--text-primary);
             height: 100vh;
             overflow: hidden;
-            touch-action: manipulation;
-        }
-
-        button {
-            color: var(--text-primary);
-            font-family: inherit;
         }
 
         .app-container {
@@ -105,10 +98,6 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
         }
 
         .project-item:hover {
@@ -135,31 +124,21 @@
             margin-top: 4px;
         }
 
-        .project-content {
-            flex: 1;
-            min-width: 0;
+        .add-project-btn {
+            margin: 12px;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
         }
 
-        .drag-handle {
-            font-size: 18px;
-            color: var(--text-secondary);
-            cursor: grab;
-            padding: 4px 6px;
-            border-radius: 6px;
-            user-select: none;
-        }
-
-        .drag-handle:active {
-            cursor: grabbing;
-        }
-
-        .dragging {
-            opacity: 0.6;
-        }
-
-        .drag-over {
-            outline: 2px dashed var(--accent);
-            outline-offset: 2px;
+        .add-project-btn:hover {
+            background: var(--accent-hover);
         }
 
         /* Main Content */
@@ -178,7 +157,6 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            height: var(--top-bar-height);
         }
 
         .menu-toggle {
@@ -203,7 +181,6 @@
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
-            color: var(--text-primary);
         }
 
         .tab-btn.active {
@@ -334,9 +311,6 @@
         /* Yarn Inventory */
         .yarn-list {
             max-width: 800px;
-            max-height: 60vh;
-            overflow-y: auto;
-            padding-right: 4px;
         }
 
         .yarn-item {
@@ -348,7 +322,6 @@
             display: flex;
             justify-content: space-between;
             align-items: start;
-            gap: 16px;
         }
 
         .yarn-info {
@@ -364,27 +337,6 @@
         .yarn-details {
             font-size: 14px;
             color: var(--text-secondary);
-        }
-
-        .yarn-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: flex-end;
-        }
-
-        .yarn-btn {
-            padding: 6px 12px;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .yarn-btn:hover {
-            background: var(--bg-hover);
         }
 
         .delete-btn {
@@ -507,11 +459,61 @@
             margin-bottom: 16px;
         }
 
+        /* Loading indicator */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(245, 243, 239, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Sync status indicator */
+        .sync-status {
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            margin-left: auto;
+        }
+
+        .sync-status.error {
+            color: #D44;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 position: absolute;
                 left: 0;
-                top: var(--top-bar-height);
+                top: 57px;
                 bottom: 0;
                 z-index: 50;
                 box-shadow: 2px 0 8px var(--shadow);
@@ -539,6 +541,12 @@
     </style>
 </head>
 <body>
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在连接数据库…</div>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
@@ -547,6 +555,7 @@
                 <input type="text" class="search-bar" id="searchBar" placeholder="搜索项目名称或标签…">
             </div>
             <div class="project-list" id="projectList"></div>
+            <button class="add-project-btn" id="addProjectBtn">+ 新项目</button>
         </div>
 
         <!-- Main Content -->
@@ -555,15 +564,13 @@
                 <button class="menu-toggle" id="menuToggle">☰</button>
                 <div class="tab-buttons">
                     <button class="tab-btn active" data-tab="projects">项目</button>
-                    <button class="tab-btn" data-tab="yarn">线材库存</button>
+                    <button class="tab-btn" data-tab="yarn">毛线库存</button>
                 </div>
+                <div class="sync-status" id="syncStatus"></div>
             </div>
 
             <div class="content-area" id="contentArea">
-                <!-- Projects view -->
                 <div id="projectsView"></div>
-                
-                <!-- Yarn inventory view -->
                 <div id="yarnView" style="display: none;"></div>
             </div>
         </div>
@@ -632,7 +639,7 @@
     <!-- Add Yarn Modal -->
     <div class="modal" id="yarnModal">
         <div class="modal-content">
-            <h2 class="modal-title" id="yarnModalTitle">添加线材</h2>
+            <h2 class="modal-title">添加线材</h2>
             <div class="form-group">
                 <label class="form-label">线材名称</label>
                 <input type="text" class="form-input" id="yarnName">
@@ -653,43 +660,208 @@
     </div>
 
     <script>
-        // Data structure
+        // ==========================================
+        // Supabase Configuration
+        // ==========================================
+        const SUPABASE_URL = 'https://egjwykgrbrwrefklvsox.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_XxpbCDwRp526mAtCisdaOw_erJRU0Mf';
+
+        // Helper: make Supabase REST API calls
+        async function supabase(table, method = 'GET', body = null, query = '') {
+            const url = `${SUPABASE_URL}/rest/v1/${table}${query}`;
+            const headers = {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': method === 'POST' ? 'return=representation' : 
+                          method === 'PATCH' ? 'return=representation' :
+                          method === 'DELETE' ? 'return=minimal' : ''
+            };
+            
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+            
+            const res = await fetch(url, options);
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(`Supabase ${method} ${table} failed: ${err}`);
+            }
+            if (method === 'DELETE') return null;
+            return res.json();
+        }
+
+        // ==========================================
+        // Data Layer - Supabase Operations
+        // ==========================================
+
+        // Local state (for UI rendering)
         let data = {
             projects: [],
             yarn: [],
             currentProjectId: null,
-            currentSectionId: null,
-            currentYarnId: null
+            currentSectionId: null
         };
 
-        // Load data from localStorage
-        function loadData() {
-            const saved = localStorage.getItem('crochetData');
-            if (saved) {
-                data = JSON.parse(saved);
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('active', show);
+        }
+
+        function showSyncStatus(msg, isError = false) {
+            const el = document.getElementById('syncStatus');
+            el.textContent = msg;
+            el.className = 'sync-status' + (isError ? ' error' : '');
+            if (!isError) {
+                setTimeout(() => { el.textContent = ''; }, 2000);
             }
         }
 
-        // Save data to localStorage
-        function saveData() {
-            localStorage.setItem('crochetData', JSON.stringify(data));
+        // Load all data from Supabase
+        async function loadData() {
+            // Fetch projects (sorted by created desc - newest first)
+            const projects = await supabase('projects', 'GET', null, '?order=created.desc');
+            // Fetch all sections
+            const sections = await supabase('sections', 'GET', null, '?order=id.asc');
+            // Fetch all yarn
+            const yarn = await supabase('yarn', 'GET', null, '?order=id.desc');
+
+            // Assemble projects with their sections
+            data.projects = projects.map(p => ({
+                id: p.id,
+                name: p.name,
+                tags: p.tags || [],
+                created: p.created,
+                status: p.status,
+                completed: p.completed,
+                sections: sections.filter(s => s.project_id === p.id).map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    count: s.count
+                }))
+            }));
+
+            data.yarn = yarn;
         }
 
-        // Initialize app
-        function init() {
-            loadData();
-            renderProjects();
-            renderYarn();
-            setupEventListeners();
-            
-            if (data.projects.length > 0) {
-                selectProject(data.projects[0].id);
-            } else {
+        // Save a new project + its default section to Supabase
+        async function saveNewProject(project) {
+            showSyncStatus('保存中…');
+            // Insert project
+            await supabase('projects', 'POST', {
+                id: project.id,
+                name: project.name,
+                tags: project.tags,
+                created: project.created,
+                status: project.status
+            });
+            // Insert default section
+            for (const section of project.sections) {
+                await supabase('sections', 'POST', {
+                    id: section.id,
+                    project_id: project.id,
+                    name: section.name,
+                    count: section.count
+                });
+            }
+            showSyncStatus('已保存 ✓');
+        }
+
+        // Update project details
+        async function updateProject(project) {
+            showSyncStatus('保存中…');
+            const body = {
+                name: project.name,
+                tags: project.tags,
+                status: project.status,
+                completed: project.completed || null
+            };
+            await supabase('projects', 'PATCH', body, `?id=eq.${project.id}`);
+            showSyncStatus('已保存 ✓');
+        }
+
+        // Delete a project (sections cascade-delete automatically)
+        async function deleteProjectFromDB(projectId) {
+            showSyncStatus('删除中…');
+            await supabase('projects', 'DELETE', null, `?id=eq.${projectId}`);
+            showSyncStatus('已删除 ✓');
+        }
+
+        // Add a new section
+        async function saveNewSection(section, projectId) {
+            showSyncStatus('保存中…');
+            await supabase('sections', 'POST', {
+                id: section.id,
+                project_id: projectId,
+                name: section.name,
+                count: section.count
+            });
+            showSyncStatus('已保存 ✓');
+        }
+
+        // Update section count
+        async function updateSectionCount(sectionId, count) {
+            // No loading text for counter - keep it snappy
+            await supabase('sections', 'PATCH', { count }, `?id=eq.${sectionId}`);
+        }
+
+        // Delete a section
+        async function deleteSectionFromDB(sectionId) {
+            showSyncStatus('删除中…');
+            await supabase('sections', 'DELETE', null, `?id=eq.${sectionId}`);
+            showSyncStatus('已删除 ✓');
+        }
+
+        // Add yarn
+        async function saveNewYarn(yarn) {
+            showSyncStatus('保存中…');
+            await supabase('yarn', 'POST', {
+                id: yarn.id,
+                name: yarn.name,
+                brand: yarn.brand,
+                amount: yarn.amount
+            });
+            showSyncStatus('已保存 ✓');
+        }
+
+        // Delete yarn
+        async function deleteYarnFromDB(yarnId) {
+            showSyncStatus('删除中…');
+            await supabase('yarn', 'DELETE', null, `?id=eq.${yarnId}`);
+            showSyncStatus('已删除 ✓');
+        }
+
+        // ==========================================
+        // Initialize App
+        // ==========================================
+        async function init() {
+            showLoading(true);
+            try {
+                await loadData();
+                showLoading(false);
+                
+                renderProjects();
+                renderYarn();
+                setupEventListeners();
+                
+                if (data.projects.length > 0) {
+                    selectProject(data.projects[0].id);
+                } else {
+                    showEmptyProjectState();
+                }
+            } catch (err) {
+                showLoading(false);
+                console.error('Failed to load data:', err);
+                showSyncStatus('连接失败，请检查网络', true);
+                // Fallback: still show the UI
+                renderProjects();
+                renderYarn();
+                setupEventListeners();
                 showEmptyProjectState();
             }
         }
 
-        // Setup event listeners
+        // ==========================================
+        // Event Listeners (updated for async)
+        // ==========================================
         function setupEventListeners() {
             // Menu toggle
             document.getElementById('menuToggle').addEventListener('click', () => {
@@ -713,11 +885,18 @@
                 });
             });
 
+            // Add project
+            document.getElementById('addProjectBtn').addEventListener('click', () => {
+                document.getElementById('projectName').value = '';
+                document.getElementById('projectTags').value = '';
+                document.getElementById('projectModal').classList.add('active');
+            });
+
             document.getElementById('cancelProject').addEventListener('click', () => {
                 document.getElementById('projectModal').classList.remove('active');
             });
 
-            document.getElementById('saveProject').addEventListener('click', () => {
+            document.getElementById('saveProject').addEventListener('click', async () => {
                 const name = document.getElementById('projectName').value.trim();
                 const tags = document.getElementById('projectTags').value.trim();
                 
@@ -733,14 +912,19 @@
                     created: new Date().toISOString(),
                     status: 'in-progress',
                     sections: [
-                        { id: Date.now(), name: '主体', count: 0 }
+                        { id: Date.now() + 1, name: '主体', count: 0 }
                     ]
                 };
 
-                data.projects.unshift(project);
-                saveData();
-                renderProjects();
-                selectProject(project.id);
+                try {
+                    await saveNewProject(project);
+                    data.projects.unshift(project);
+                    renderProjects();
+                    selectProject(project.id);
+                } catch (err) {
+                    console.error(err);
+                    showSyncStatus('保存失败', true);
+                }
                 document.getElementById('projectModal').classList.remove('active');
             });
 
@@ -749,7 +933,7 @@
                 document.getElementById('sectionModal').classList.remove('active');
             });
 
-            document.getElementById('saveSection').addEventListener('click', () => {
+            document.getElementById('saveSection').addEventListener('click', async () => {
                 const name = document.getElementById('sectionName').value.trim();
                 
                 if (!name) {
@@ -759,13 +943,15 @@
 
                 const project = data.projects.find(p => p.id === data.currentProjectId);
                 if (project) {
-                    project.sections.push({
-                        id: Date.now(),
-                        name: name,
-                        count: 0
-                    });
-                    saveData();
-                    renderProjectView();
+                    const section = { id: Date.now(), name: name, count: 0 };
+                    try {
+                        await saveNewSection(section, project.id);
+                        project.sections.push(section);
+                        renderProjectView();
+                    } catch (err) {
+                        console.error(err);
+                        showSyncStatus('保存失败', true);
+                    }
                     document.getElementById('sectionModal').classList.remove('active');
                 }
             });
@@ -775,7 +961,7 @@
                 document.getElementById('editProjectModal').classList.remove('active');
             });
 
-            document.getElementById('saveEditProject').addEventListener('click', () => {
+            document.getElementById('saveEditProject').addEventListener('click', async () => {
                 const project = data.projects.find(p => p.id === data.currentProjectId);
                 if (project) {
                     project.name = document.getElementById('editProjectName').value.trim();
@@ -787,7 +973,12 @@
                         project.completed = new Date().toISOString();
                     }
                     
-                    saveData();
+                    try {
+                        await updateProject(project);
+                    } catch (err) {
+                        console.error(err);
+                        showSyncStatus('保存失败', true);
+                    }
                     renderProjects();
                     renderProjectView();
                     document.getElementById('editProjectModal').classList.remove('active');
@@ -803,10 +994,9 @@
             // Add yarn
             document.getElementById('cancelYarn').addEventListener('click', () => {
                 document.getElementById('yarnModal').classList.remove('active');
-                data.currentYarnId = null;
             });
 
-            document.getElementById('saveYarn').addEventListener('click', () => {
+            document.getElementById('saveYarn').addEventListener('click', async () => {
                 const name = document.getElementById('yarnName').value.trim();
                 const brand = document.getElementById('yarnBrand').value.trim();
                 const amount = document.getElementById('yarnAmount').value.trim();
@@ -816,33 +1006,32 @@
                     return;
                 }
 
-                if (data.currentYarnId) {
-                    const yarn = data.yarn.find(item => item.id === data.currentYarnId);
-                    if (yarn) {
-                        yarn.name = name;
-                        yarn.brand = brand;
-                        yarn.amount = amount;
-                    }
-                } else {
-                    data.yarn.push({
-                        id: Date.now(),
-                        name: name,
-                        brand: brand,
-                        amount: amount
-                    });
-                }
+                const yarn = {
+                    id: Date.now(),
+                    name: name,
+                    brand: brand,
+                    amount: amount
+                };
 
-                saveData();
+                try {
+                    await saveNewYarn(yarn);
+                    data.yarn.unshift(yarn);
+                } catch (err) {
+                    console.error(err);
+                    showSyncStatus('保存失败', true);
+                }
                 renderYarn();
                 document.getElementById('yarnModal').classList.remove('active');
                 document.getElementById('yarnName').value = '';
                 document.getElementById('yarnBrand').value = '';
                 document.getElementById('yarnAmount').value = '';
-                data.currentYarnId = null;
             });
         }
 
-        // Render projects list
+        // ==========================================
+        // Render Functions (unchanged UI)
+        // ==========================================
+
         function renderProjects(query = '') {
             const list = document.getElementById('projectList');
             const filtered = data.projects.filter(p => {
@@ -857,31 +1046,22 @@
             }
 
             list.innerHTML = filtered.map(project => {
-                const createdDate = new Date(project.created).toLocaleDateString();
-                const completedDate = project.status === 'completed' && project.completed
+                const date = project.status === 'completed' && project.completed
                     ? new Date(project.completed).toLocaleDateString()
-                    : null;
+                    : new Date(project.created).toLocaleDateString();
+                const label = project.status === 'completed' ? '已完成' : '创建于';
                 
                 return `
                     <div class="project-item ${project.id === data.currentProjectId ? 'active' : ''}" 
-                         onclick="selectProject(${project.id})"
-                         draggable="true"
-                         data-project-id="${project.id}">
-                        <div class="project-content">
-                            <div class="project-name">${project.name}</div>
-                            <div class="project-meta">创建日期: ${createdDate}</div>
-                            ${completedDate ? `<div class="project-meta">完成日期: ${completedDate}</div>` : ''}
-                            ${project.tags.length > 0 ? `<div class="project-tags">${project.tags.join(', ')}</div>` : ''}
-                        </div>
-                        <span class="drag-handle" title="拖拽排序">☰</span>
+                         onclick="selectProject(${project.id})">
+                        <div class="project-name">${project.name}</div>
+                        <div class="project-meta">${label}: ${date}</div>
+                        ${project.tags.length > 0 ? `<div class="project-tags">${project.tags.join(', ')}</div>` : ''}
                     </div>
                 `;
             }).join('');
-
-            setupProjectDrag();
         }
 
-        // Select a project
         function selectProject(id) {
             data.currentProjectId = id;
             const project = data.projects.find(p => p.id === id);
@@ -892,18 +1072,15 @@
             renderProjectView();
         }
 
-        // Show empty project state
         function showEmptyProjectState() {
             document.getElementById('projectsView').innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">🧶</div>
-                    <p>暂未添加项目。</p>
-                    <button class="btn btn-primary" style="margin-top: 16px; max-width: 200px;" onclick="openProjectModal()">添加编织项目</button>
+                    <p>暂未添加项目。点击 + 按钮创建第一个项目吧~</p>
                 </div>
             `;
         }
 
-        // Render current project view
         function renderProjectView() {
             const project = data.projects.find(p => p.id === data.currentProjectId);
             if (!project) {
@@ -912,40 +1089,41 @@
             }
 
             const section = project.sections.find(s => s.id === data.currentSectionId);
+            if (!section) {
+                if (project.sections.length > 0) {
+                    data.currentSectionId = project.sections[0].id;
+                    renderProjectView();
+                }
+                return;
+            }
             
             document.getElementById('projectsView').innerHTML = `
-                <div style="max-width: 800px; margin: 0 auto;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <h2 style="font-size: 24px; font-weight: 600;">项目</h2>
-                        <button class="btn btn-primary" style="width: auto; max-width: 150px;" onclick="openProjectModal()">+ 新项目</button>
+                <div class="counter-container">
+                    <div class="project-header">
+                        <h2 class="project-title">${project.name}</h2>
+                        <div class="project-actions">
+                            <button class="btn-small" onclick="editProject()">编辑项目</button>
+                            <button class="btn-small" onclick="addSection()">+ 添加分区</button>
+                            ${project.sections.length > 1 ? `<button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteCurrentSection()">删除分区</button>` : ''}
+                            <button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteProject()">删除项目</button>
+                        </div>
                     </div>
-                    <div class="counter-container" style="max-width: 600px;">
-                        <div class="project-header">
-                            <h2 class="project-title">${project.name}</h2>
-                            <div class="project-actions">
-                                <button class="btn-small" onclick="editProject()">编辑项目</button>
-                                <button class="btn-small" onclick="addSection()">+ 添加分区</button>
-                                ${project.sections.length > 1 ? `<button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteCurrentSection()">删除分区</button>` : ''}
-                                <button class="btn-small" style="color: #D44; border-color: #D44;" onclick="deleteProject()">删除项目</button>
-                            </div>
-                        </div>
 
-                        <div class="section-tabs">
-                            ${project.sections.map(s => `
-                                <div class="section-tab ${s.id === data.currentSectionId ? 'active' : ''}" 
-                                     onclick="selectSection(${s.id})">
-                                    ${s.name}
-                                </div>
-                            `).join('')}
-                        </div>
-
-                        <div class="counter-display">
-                            <div class="counter-number">${section.count}</div>
-                            <div class="counter-buttons">
-                                <button class="counter-btn" onclick="decrementCounter()">−</button>
-                                <button class="counter-btn" onclick="resetCounter()">↻</button>
-                                <button class="counter-btn" onclick="incrementCounter()">+</button>
+                    <div class="section-tabs">
+                        ${project.sections.map(s => `
+                            <div class="section-tab ${s.id === data.currentSectionId ? 'active' : ''}" 
+                                 onclick="selectSection(${s.id})">
+                                ${s.name}
                             </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="counter-display">
+                        <div class="counter-number">${section.count}</div>
+                        <div class="counter-buttons">
+                            <button class="counter-btn" onclick="decrementCounter()">−</button>
+                            <button class="counter-btn" onclick="resetCounter()">↻</button>
+                            <button class="counter-btn" onclick="incrementCounter()">+</button>
                         </div>
                     </div>
                 </div>
@@ -963,17 +1141,22 @@
             document.getElementById('sectionModal').classList.add('active');
         }
 
-        function deleteSection(id) {
+        async function deleteSection(id) {
             if (!confirm('确认删除该分区？')) return;
             
             const project = data.projects.find(p => p.id === data.currentProjectId);
             if (project) {
-                project.sections = project.sections.filter(s => s.id !== id);
-                if (data.currentSectionId === id && project.sections.length > 0) {
-                    data.currentSectionId = project.sections[0].id;
+                try {
+                    await deleteSectionFromDB(id);
+                    project.sections = project.sections.filter(s => s.id !== id);
+                    if (data.currentSectionId === id && project.sections.length > 0) {
+                        data.currentSectionId = project.sections[0].id;
+                    }
+                    renderProjectView();
+                } catch (err) {
+                    console.error(err);
+                    showSyncStatus('删除失败', true);
                 }
-                saveData();
-                renderProjectView();
             }
         }
 
@@ -982,32 +1165,54 @@
         }
 
         // Counter operations
-        function incrementCounter() {
+        async function incrementCounter() {
             const project = data.projects.find(p => p.id === data.currentProjectId);
             const section = project.sections.find(s => s.id === data.currentSectionId);
             section.count++;
-            saveData();
             renderProjectView();
+            try {
+                await updateSectionCount(section.id, section.count);
+            } catch (err) {
+                console.error(err);
+                section.count--;
+                renderProjectView();
+                showSyncStatus('同步失败', true);
+            }
         }
 
-        function decrementCounter() {
+        async function decrementCounter() {
             const project = data.projects.find(p => p.id === data.currentProjectId);
             const section = project.sections.find(s => s.id === data.currentSectionId);
             if (section.count > 0) {
                 section.count--;
-                saveData();
                 renderProjectView();
+                try {
+                    await updateSectionCount(section.id, section.count);
+                } catch (err) {
+                    console.error(err);
+                    section.count++;
+                    renderProjectView();
+                    showSyncStatus('同步失败', true);
+                }
             }
         }
 
-        function resetCounter() {
-            if (!confirm('确认将计数器重置为 0？')) return;
+        async function resetCounter() {
+            if (!confirm('确认将计数器重置为0？')) return;
             
             const project = data.projects.find(p => p.id === data.currentProjectId);
             const section = project.sections.find(s => s.id === data.currentSectionId);
+            const oldCount = section.count;
             section.count = 0;
-            saveData();
             renderProjectView();
+            try {
+                await updateSectionCount(section.id, 0);
+            } catch (err) {
+                console.error(err);
+                section.count = oldCount;
+                renderProjectView();
+                showSyncStatus('同步失败', true);
+            }
         }
 
         // Project management
@@ -1021,20 +1226,25 @@
             }
         }
 
-        function deleteProject() {
+        async function deleteProject() {
             if (!confirm('确认删除该项目？此操作无法撤销。')) return;
             
-            data.projects = data.projects.filter(p => p.id !== data.currentProjectId);
-            saveData();
-            
-            if (data.projects.length > 0) {
-                selectProject(data.projects[0].id);
-            } else {
-                data.currentProjectId = null;
-                data.currentSectionId = null;
-                showEmptyProjectState();
+            try {
+                await deleteProjectFromDB(data.currentProjectId);
+                data.projects = data.projects.filter(p => p.id !== data.currentProjectId);
+                
+                if (data.projects.length > 0) {
+                    selectProject(data.projects[0].id);
+                } else {
+                    data.currentProjectId = null;
+                    data.currentSectionId = null;
+                    showEmptyProjectState();
+                }
+                renderProjects();
+            } catch (err) {
+                console.error(err);
+                showSyncStatus('删除失败', true);
             }
-            renderProjects();
         }
 
         // Render yarn inventory
@@ -1060,188 +1270,37 @@
                     </div>
                     <div class="yarn-list">
                         ${data.yarn.map(yarn => `
-                            <div class="yarn-item" draggable="true" data-yarn-id="${yarn.id}">
+                            <div class="yarn-item">
                                 <div class="yarn-info">
                                     <div class="yarn-name">${yarn.name}</div>
                                     <div class="yarn-details">
-                                        ${yarn.brand ? `<div>品牌：${yarn.brand}</div>` : ''}
-                                        ${yarn.amount ? `<div>数量：${yarn.amount}</div>` : ''}
+                                        ${yarn.brand ? `品牌: ${yarn.brand}` : ''}
+                                        ${yarn.brand && yarn.amount ? ' · ' : ''}
+                                        ${yarn.amount ? `数量: ${yarn.amount}` : ''}
                                     </div>
                                 </div>
-                                <div class="yarn-actions">
-                                    <span class="drag-handle" title="拖拽排序">☰</span>
-                                    <button class="yarn-btn" onclick="editYarn(${yarn.id})">编辑</button>
-                                    <button class="delete-btn" onclick="deleteYarn(${yarn.id})">删除</button>
-                                </div>
+                                <button class="delete-btn" onclick="deleteYarn(${yarn.id})">删除</button>
                             </div>
                         `).join('')}
                     </div>
                 </div>
             `;
-
-            setupYarnDrag();
         }
 
         function openYarnModal() {
-            document.getElementById('yarnModalTitle').textContent = '添加线材';
-            document.getElementById('saveYarn').textContent = '添加';
-            document.getElementById('yarnName').value = '';
-            document.getElementById('yarnBrand').value = '';
-            document.getElementById('yarnAmount').value = '';
-            data.currentYarnId = null;
             document.getElementById('yarnModal').classList.add('active');
         }
 
-        function editYarn(id) {
-            const yarn = data.yarn.find(item => item.id === id);
-            if (!yarn) return;
-            
-            data.currentYarnId = id;
-            document.getElementById('yarnModalTitle').textContent = '编辑线材';
-            document.getElementById('saveYarn').textContent = '保存';
-            document.getElementById('yarnName').value = yarn.name;
-            document.getElementById('yarnBrand').value = yarn.brand;
-            document.getElementById('yarnAmount').value = yarn.amount;
-            document.getElementById('yarnModal').classList.add('active');
-        }
-
-        function deleteYarn(id) {
+        async function deleteYarn(id) {
             if (!confirm('确认删除该线材？')) return;
-            data.yarn = data.yarn.filter(y => y.id !== id);
-            saveData();
-            renderYarn();
-        }
-
-        function openProjectModal() {
-            document.getElementById('projectName').value = '';
-            document.getElementById('projectTags').value = '';
-            document.getElementById('projectModal').classList.add('active');
-        }
-
-        // Drag and drop for projects
-        function setupProjectDrag() {
-            const list = document.getElementById('projectList');
-            if (!list.dataset.dragBound) {
-                list.addEventListener('dragover', handleProjectDragOver);
-                list.addEventListener('drop', handleProjectDrop);
-                list.addEventListener('dragleave', handleProjectDragLeave);
-                list.dataset.dragBound = 'true';
+            try {
+                await deleteYarnFromDB(id);
+                data.yarn = data.yarn.filter(y => y.id !== id);
+                renderYarn();
+            } catch (err) {
+                console.error(err);
+                showSyncStatus('删除失败', true);
             }
-
-            list.querySelectorAll('.project-item').forEach(item => {
-                item.addEventListener('dragstart', handleProjectDragStart);
-                item.addEventListener('dragend', handleProjectDragEnd);
-            });
-        }
-
-        function handleProjectDragStart(event) {
-            event.currentTarget.classList.add('dragging');
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', event.currentTarget.dataset.projectId);
-        }
-
-        function handleProjectDragEnd(event) {
-            event.currentTarget.classList.remove('dragging');
-            document.querySelectorAll('.project-item').forEach(item => item.classList.remove('drag-over'));
-        }
-
-        function handleProjectDragOver(event) {
-            event.preventDefault();
-            const target = event.target.closest('.project-item');
-            if (target && !target.classList.contains('dragging')) {
-                document.querySelectorAll('.project-item').forEach(item => item.classList.remove('drag-over'));
-                target.classList.add('drag-over');
-            }
-        }
-
-        function handleProjectDragLeave(event) {
-            const target = event.target.closest('.project-item');
-            if (target) {
-                target.classList.remove('drag-over');
-            }
-        }
-
-        function handleProjectDrop(event) {
-            event.preventDefault();
-            const target = event.target.closest('.project-item');
-            if (!target) return;
-
-            const draggedId = parseInt(event.dataTransfer.getData('text/plain'), 10);
-            const targetId = parseInt(target.dataset.projectId, 10);
-            if (!draggedId || !targetId || draggedId === targetId) return;
-
-            const fromIndex = data.projects.findIndex(item => item.id === draggedId);
-            const toIndex = data.projects.findIndex(item => item.id === targetId);
-            if (fromIndex === -1 || toIndex === -1) return;
-
-            const [moved] = data.projects.splice(fromIndex, 1);
-            data.projects.splice(toIndex, 0, moved);
-            saveData();
-            renderProjects(document.getElementById('searchBar').value.trim().toLowerCase());
-        }
-
-        // Drag and drop for yarn
-        function setupYarnDrag() {
-            const list = document.querySelector('.yarn-list');
-            if (!list) return;
-            
-            if (!list.dataset.dragBound) {
-                list.addEventListener('dragover', handleYarnDragOver);
-                list.addEventListener('drop', handleYarnDrop);
-                list.addEventListener('dragleave', handleYarnDragLeave);
-                list.dataset.dragBound = 'true';
-            }
-
-            list.querySelectorAll('.yarn-item').forEach(item => {
-                item.addEventListener('dragstart', handleYarnDragStart);
-                item.addEventListener('dragend', handleYarnDragEnd);
-            });
-        }
-
-        function handleYarnDragStart(event) {
-            event.currentTarget.classList.add('dragging');
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', event.currentTarget.dataset.yarnId);
-        }
-
-        function handleYarnDragEnd(event) {
-            event.currentTarget.classList.remove('dragging');
-            document.querySelectorAll('.yarn-item').forEach(item => item.classList.remove('drag-over'));
-        }
-
-        function handleYarnDragOver(event) {
-            event.preventDefault();
-            const target = event.target.closest('.yarn-item');
-            if (target && !target.classList.contains('dragging')) {
-                document.querySelectorAll('.yarn-item').forEach(item => item.classList.remove('drag-over'));
-                target.classList.add('drag-over');
-            }
-        }
-
-        function handleYarnDragLeave(event) {
-            const target = event.target.closest('.yarn-item');
-            if (target) {
-                target.classList.remove('drag-over');
-            }
-        }
-
-        function handleYarnDrop(event) {
-            event.preventDefault();
-            const target = event.target.closest('.yarn-item');
-            if (!target) return;
-
-            const draggedId = parseInt(event.dataTransfer.getData('text/plain'), 10);
-            const targetId = parseInt(target.dataset.yarnId, 10);
-            if (!draggedId || !targetId || draggedId === targetId) return;
-
-            const fromIndex = data.yarn.findIndex(item => item.id === draggedId);
-            const toIndex = data.yarn.findIndex(item => item.id === targetId);
-            if (fromIndex === -1 || toIndex === -1) return;
-
-            const [moved] = data.yarn.splice(fromIndex, 1);
-            data.yarn.splice(toIndex, 0, moved);
-            saveData();
-            renderYarn();
         }
 
         // Start the app
