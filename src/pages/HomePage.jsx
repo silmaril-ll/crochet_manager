@@ -45,6 +45,7 @@ export default function HomePage({ user }) {
         name: formData.name,
         tags: formData.tags,
         start_date: formData.start_date || null,
+        end_date: formData.end_date || null,
         hook_size: formData.hook_size || null,
         yarn_weight: formData.yarn_weight || null,
         status: 'in-progress',

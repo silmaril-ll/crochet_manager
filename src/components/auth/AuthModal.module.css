@@ -5,21 +5,19 @@
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: 24px;
-  padding-top: 12vh;
-  overflow-y: auto;
 }
 
 .modal {
   background: var(--bg-secondary);
   border-radius: var(--radius-xl);
-  padding: 32px;
+  padding: 24px;
   width: 100%;
   max-width: 360px;
   box-shadow: var(--shadow-lg);
-  max-height: 85dvh;
+  max-height: calc(100dvh - 48px);
   overflow-y: auto;
 }
 

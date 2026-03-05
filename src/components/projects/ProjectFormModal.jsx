@@ -19,6 +19,7 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
     name: project?.name || '',
     tags: (project?.tags || []).join(', '),
     start_date: project?.start_date || '',
+    end_date: project?.end_date || '',
     hook_size: project?.hook_size || '',
     yarn_weight: project?.yarn_weight || '',
     status: project?.status || 'in-progress',
@@ -61,14 +62,15 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
               placeholder="披肩, 玩偶, 毛毯"
             />
           </Field>
-          <div className={styles.row}>
-            <Field label="起始日期">
-              <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} />
-            </Field>
-            <Field label="钩针尺寸（mm）">
-              <input value={form.hook_size} onChange={e => set('hook_size', e.target.value)} placeholder="3.5" />
-            </Field>
-          </div>
+          <Field label="起始日期">
+            <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} />
+          </Field>
+          <Field label="完成日期">
+            <input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} />
+          </Field>
+          <Field label="钩针尺寸（mm）">
+            <input value={form.hook_size} onChange={e => set('hook_size', e.target.value)} placeholder="3.5" />
+          </Field>
           <Field label="线材粗细">
             <input
               list="weight-suggestions-proj"
