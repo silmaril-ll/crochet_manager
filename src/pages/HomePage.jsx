@@ -54,11 +54,10 @@ export default function HomePage({ user }) {
       .select()
       .single()
 
-    if (!error && data) {
-      setProjects(prev => [data, ...prev])
-      setShowForm(false)
-      navigate(`/project/${data.id}`)
-    }
+    if (error) throw new Error(error.message)
+    setProjects(prev => [data, ...prev])
+    setShowForm(false)
+    navigate(`/project/${data.id}`)
   }
 
   async function handleDelete(id) {

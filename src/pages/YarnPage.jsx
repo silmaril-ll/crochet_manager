@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import styles from './YarnPage.module.css'
 
@@ -237,7 +238,7 @@ function YarnFormSheet({ yarn, onSave, onClose }) {
     setSaving(false)
   }
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={e => e.stopPropagation()}>
         <div className={styles.handle} />
@@ -294,7 +295,8 @@ function YarnFormSheet({ yarn, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './ProjectFormModal.module.css'
 
 export default function ProjectFormModal({ project, onSave, onClose }) {
@@ -25,6 +26,7 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
     status: project?.status || 'in-progress',
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   function set(key, value) {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -33,14 +35,20 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
   async function handleSave() {
     if (!form.name.trim()) return
     setSaving(true)
-    await onSave({
-      ...form,
-      tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-    })
-    setSaving(false)
+    setError('')
+    try {
+      await onSave({
+        ...form,
+        tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      })
+    } catch (err) {
+      setError(err.message || '保存失败，请重试')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={e => e.stopPropagation()}>
         <div className={styles.handle} />
@@ -99,6 +107,8 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
           )}
         </div>
 
+        {error && <p className={styles.error}>{error}</p>}
+
         <div className={styles.actions}>
           <button className={styles.cancel} onClick={onClose}>取消</button>
           <button
@@ -110,7 +120,8 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
