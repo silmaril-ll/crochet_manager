@@ -1,7 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styles from './AuthModal.module.css'
 
 export default function AuthModal({ onSignIn, onClose }) {
+  useEffect(() => {
+    const y = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${y}px`
+    document.body.style.width = '100%'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, y)
+    }
+  }, [])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
