@@ -174,6 +174,19 @@ function YarnCard({ yarn, onEdit, onDelete }) {
 }
 
 function YarnFormSheet({ yarn, onSave, onClose }) {
+  useEffect(() => {
+    const y = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${y}px`
+    document.body.style.width = '100%'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, y)
+    }
+  }, [])
+
   const [form, setForm] = useState({
     name: yarn?.name || '',
     brand: yarn?.brand || '',
