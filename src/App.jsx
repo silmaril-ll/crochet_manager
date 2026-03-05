@@ -11,10 +11,12 @@ function AppContent({ user, signIn, signOut }) {
   const isProject = useMatch('/project/:id')
   return (
     <div className={styles.app}>
-      <header className={styles.header}>
-        <span className={styles.logo}>毛线助手</span>
-        <AuthDot user={user} onSignIn={signIn} onSignOut={signOut} />
-      </header>
+      {!isProject && (
+        <header className={styles.header}>
+          <span className={styles.logo}>毛线助手</span>
+          <AuthDot user={user} onSignIn={signIn} onSignOut={signOut} />
+        </header>
+      )}
 
       <main className={`${styles.main} ${isProject ? styles.mainProject : ''}`}>
         <Routes>

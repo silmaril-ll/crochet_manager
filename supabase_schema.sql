@@ -47,6 +47,18 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Image annotations (colored note bubbles pinned to pattern images)
+CREATE TABLE IF NOT EXISTS image_annotations (
+  id           BIGSERIAL PRIMARY KEY,
+  project_id   BIGINT REFERENCES projects(id) ON DELETE CASCADE,
+  page_index   INT DEFAULT 0,      -- which image (0-indexed, matches activeImg)
+  x            FLOAT NOT NULL,     -- horizontal position 0-1 (% of image width)
+  y            FLOAT NOT NULL,     -- vertical position 0-1 (% of image height)
+  text         TEXT NOT NULL,
+  color        TEXT DEFAULT 'yellow',  -- 'yellow'|'coral'|'mint'|'lavender'|'sky'
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Reading lines (one per project)
 CREATE TABLE IF NOT EXISTS reading_lines (
   id         BIGSERIAL PRIMARY KEY,

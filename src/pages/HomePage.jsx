@@ -19,7 +19,26 @@ export default function HomePage({ user }) {
       .from('projects')
       .select('*')
       .order('created', { ascending: false })
-    if (!error) setProjects(data || [])
+
+    if (!error && data) {
+      // Batch-load first pattern image per project for card thumbnails
+      const ids = data.map(p => p.id)
+      const { data: files } = await supabase
+        .from('pattern_files')
+        .select('project_id, url')
+        .in('project_id', ids)
+        .eq('file_type', 'image')
+        .order('sort_order', { ascending: true })
+
+      const thumbMap = {}
+      for (const f of files || []) {
+        if (!thumbMap[f.project_id]) thumbMap[f.project_id] = f.url
+      }
+      setProjects(data.map(p => ({
+        ...p,
+        thumbnail_url: thumbMap[p.id] || p.thumbnail_url || null,
+      })))
+    }
     setLoading(false)
   }, [])
 
