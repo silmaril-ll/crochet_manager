@@ -56,10 +56,9 @@ export default function ProjectPage({ user }) {
       .eq('id', id)
       .select()
       .single()
-    if (!error) {
-      setProject(data)
-      setShowEdit(false)
-    }
+    if (error) throw new Error(error.message)
+    setProject(data)
+    setShowEdit(false)
   }
 
   if (loading) {

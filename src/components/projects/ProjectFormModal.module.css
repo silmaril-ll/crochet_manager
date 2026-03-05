@@ -7,18 +7,18 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  touch-action: none; /* 防止触摸穿透和横向晃动 */
-  overflow: hidden;
+  touch-action: none;
 }
 
 .sheet {
   background: var(--bg-secondary);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  padding: 12px 20px 32px;
+  padding: 12px 20px 0;
   width: 100%;
   max-width: 768px;
   max-height: 90dvh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   overscroll-behavior: none;
   touch-action: pan-y;
 }
@@ -29,6 +29,7 @@
   background: var(--border);
   border-radius: 2px;
   margin: 0 auto 20px;
+  flex-shrink: 0;
 }
 
 .title {
@@ -36,13 +37,16 @@
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .fields {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-bottom: 24px;
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 16px;
 }
 
 .row {
@@ -85,15 +89,22 @@
   color: var(--text-muted);
 }
 
+.error {
+  font-size: 13px;
+  color: #c0392b;
+  background: #fde8e8;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
 .actions {
   display: flex;
   gap: 10px;
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
+  padding: 12px 0 calc(env(safe-area-inset-bottom, 0px) + 16px);
   background: var(--bg-secondary);
-  padding-top: 12px;
-  padding-bottom: env(safe-area-inset-bottom, 8px);
-  margin-top: auto;
 }
 
 .cancel {
