@@ -30,7 +30,13 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-html, body, #root {
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+  background: var(--bg-primary); /* 防止 iOS 过度滚动时露出蓝色 */
+}
+
+body, #root {
   height: 100%;
   height: -webkit-fill-available;
 }
@@ -41,6 +47,7 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
+  overflow: hidden; /* 防止 body 层面的滚动和横向晃动 */
 }
 
 button {

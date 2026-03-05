@@ -2,15 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import styles from './YarnPage.module.css'
 
-const WEIGHT_LABEL = {
-  'lace': '蕾丝',
-  'fingering': '极细',
-  'sport': '细',
-  'dk': '中细',
-  'worsted': '中粗',
-  'bulky': '粗',
-  'super-bulky': '超粗',
-}
+// 直接显示原始值
+const WEIGHT_LABEL = (w) => w || ''
 
 export default function YarnPage({ user }) {
   const [yarns, setYarns] = useState([])
@@ -132,7 +125,7 @@ function YarnCard({ yarn, onEdit, onDelete }) {
         <div className={styles.cardName}>{yarn.name}</div>
         <div className={styles.cardMeta}>
           {yarn.brand && <span>{yarn.brand}</span>}
-          {yarn.weight && <span>{WEIGHT_LABEL[yarn.weight] || yarn.weight}</span>}
+          {yarn.weight && <span>{WEIGHT_LABEL(yarn.weight)}</span>}
           {yarn.amount && <span>{yarn.amount}</span>}
         </div>
       </div>
@@ -218,16 +211,21 @@ function YarnFormSheet({ yarn, onSave, onClose }) {
           </Field>
           <div className={styles.row}>
             <Field label="粗细">
-              <select value={form.weight} onChange={e => set('weight', e.target.value)}>
-                <option value="">选择</option>
-                <option value="lace">蕾丝</option>
-                <option value="fingering">极细</option>
-                <option value="sport">细</option>
-                <option value="dk">中细</option>
-                <option value="worsted">中粗</option>
-                <option value="bulky">粗</option>
-                <option value="super-bulky">超粗</option>
-              </select>
+              <input
+                list="weight-suggestions"
+                value={form.weight}
+                onChange={e => set('weight', e.target.value)}
+                placeholder="如：2股线"
+              />
+              <datalist id="weight-suggestions">
+                <option value="2股线" />
+                <option value="4股线" />
+                <option value="8股线" />
+                <option value="手混线" />
+                <option value="蕾丝线" />
+                <option value="细线" />
+                <option value="中粗线" />
+              </datalist>
             </Field>
             <Field label="数量/重量">
               <input value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="200g / 2卷" />
