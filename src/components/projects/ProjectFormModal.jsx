@@ -57,16 +57,21 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
             </Field>
           </div>
           <Field label="线材粗细">
-            <select value={form.yarn_weight} onChange={e => set('yarn_weight', e.target.value)}>
-              <option value="">选择粗细</option>
-              <option value="lace">蕾丝</option>
-              <option value="fingering">极细</option>
-              <option value="sport">细</option>
-              <option value="dk">中细</option>
-              <option value="worsted">中粗</option>
-              <option value="bulky">粗</option>
-              <option value="super-bulky">超粗</option>
-            </select>
+            <input
+              list="weight-suggestions-proj"
+              value={form.yarn_weight}
+              onChange={e => set('yarn_weight', e.target.value)}
+              placeholder="如：4股线"
+            />
+            <datalist id="weight-suggestions-proj">
+              <option value="2股线" />
+              <option value="4股线" />
+              <option value="8股线" />
+              <option value="手混线" />
+              <option value="蕾丝线" />
+              <option value="细线" />
+              <option value="中粗线" />
+            </datalist>
           </Field>
           {project && (
             <Field label="状态">

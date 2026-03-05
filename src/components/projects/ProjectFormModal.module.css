@@ -7,6 +7,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  touch-action: none; /* 防止触摸穿透和横向晃动 */
+  overflow: hidden;
 }
 
 .sheet {
@@ -17,6 +19,8 @@
   max-width: 768px;
   max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior: none;
+  touch-action: pan-y;
 }
 
 .handle {

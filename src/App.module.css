@@ -56,4 +56,5 @@
   overflow-x: hidden;
   padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px);
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none; /* 禁止下拉刷新 */
 }
