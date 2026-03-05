@@ -8,13 +8,14 @@ import NotesPanel from '../components/tools/NotesPanel'
 import ProjectFormModal from '../components/projects/ProjectFormModal'
 import styles from './ProjectPage.module.css'
 
+const MAX_COUNTERS = 3
+
 const IconCounter = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <rect x="4" y="4" width="16" height="16" rx="3"/>
     <path d="M9 12h6M12 9v6"/>
   </svg>
 )
-
 const IconNotes = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
@@ -23,7 +24,6 @@ const IconNotes = (
     <line x1="8" y1="17" x2="12" y2="17"/>
   </svg>
 )
-
 const IconReadingLine = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <line x1="3" y1="10" x2="21" y2="10"/>
@@ -32,14 +32,12 @@ const IconReadingLine = (
     <line x1="3" y1="18" x2="21" y2="18" strokeOpacity="0.35"/>
   </svg>
 )
-
 const IconAnnotate = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="10" r="2"/>
     <path d="M12 2C7.03 2 3 6.03 3 11c0 3.1 1.53 5.83 3.88 7.5L6 22l4-2h2c4.97 0 9-4.03 9-9S16.97 2 12 2z"/>
   </svg>
 )
-
 const IconUpload = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -55,7 +53,12 @@ export default function ProjectPage({ user }) {
   const [loading, setLoading] = useState(true)
   const [showEdit, setShowEdit] = useState(false)
 
-  const [activeDrawer, setActiveDrawer] = useState(null)  // 'counter' | 'notes' | null
+  // ── Shared counter state (drives both MiniCounter + CounterPanel) ──
+  const [counters, setCounters] = useState([])
+  const [countersReady, setCountersReady] = useState(false)
+
+  // ── Pattern viewer state ──
+  const [activeDrawer, setActiveDrawer] = useState(null)
   const [showReadingLine, setShowReadingLine] = useState(false)
   const [annotationMode, setAnnotationMode] = useState(false)
   const [activeImg, setActiveImg] = useState(0)
@@ -64,12 +67,10 @@ export default function ProjectPage({ user }) {
 
   const patternRef = useRef()
 
+  // ── Project ──
   const loadProject = useCallback(async () => {
     const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .single()
+      .from('projects').select('*').eq('id', id).single()
     if (!error && data) {
       setProject(data)
       supabase.from('projects').update({ last_opened: new Date().toISOString() }).eq('id', id)
@@ -79,53 +80,95 @@ export default function ProjectPage({ user }) {
 
   useEffect(() => { loadProject() }, [loadProject])
 
-  function toggleDrawer(name) {
-    setActiveDrawer(prev => prev === name ? null : name)
+  // ── Counters: load + auto-init defaults ──
+  const loadCounters = useCallback(async () => {
+    const { data } = await supabase
+      .from('counters').select('*').eq('project_id', id)
+      .order('created_at', { ascending: true })
+
+    if (data && data.length === 0) {
+      const { data: created } = await supabase
+        .from('counters')
+        .insert([
+          { project_id: id, name: '行', count: 0 },
+          { project_id: id, name: '针', count: 0 },
+        ])
+        .select()
+      setCounters(created || [])
+    } else {
+      setCounters(data || [])
+    }
+    setCountersReady(true)
+  }, [id])
+
+  useEffect(() => { loadCounters() }, [loadCounters])
+
+  // ── Counter operations (optimistic update + DB write) ──
+  async function updateCount(counterId, delta) {
+    const counter = counters.find(c => c.id === counterId)
+    if (!counter) return
+    const newCount = Math.max(0, counter.count + delta)
+    setCounters(prev => prev.map(c => c.id === counterId ? { ...c, count: newCount } : c))
+    await supabase.from('counters').update({ count: newCount }).eq('id', counterId)
   }
 
-  function prevImg() { setActiveImg(i => Math.max(0, i - 1)) }
-  function nextImg() { setActiveImg(i => Math.min(imageCount - 1, i + 1)) }
+  async function resetCounter(counterId) {
+    setCounters(prev => prev.map(c => c.id === counterId ? { ...c, count: 0 } : c))
+    await supabase.from('counters').update({ count: 0 }).eq('id', counterId)
+  }
 
+  async function addCounter(name) {
+    if (counters.length >= MAX_COUNTERS) return
+    const { data } = await supabase
+      .from('counters')
+      .insert({ project_id: id, name: name || `计数器 ${counters.length + 1}`, count: 0 })
+      .select().single()
+    if (data) setCounters(prev => [...prev, data])
+  }
+
+  async function deleteCounter(counterId) {
+    if (!confirm('删除该计数器？')) return
+    setCounters(prev => prev.filter(c => c.id !== counterId))
+    await supabase.from('counters').delete().eq('id', counterId)
+  }
+
+  async function renameCounter(counterId, name) {
+    if (!name.trim()) return
+    setCounters(prev => prev.map(c => c.id === counterId ? { ...c, name: name.trim() } : c))
+    await supabase.from('counters').update({ name: name.trim() }).eq('id', counterId)
+  }
+
+  // ── Project edit ──
   async function handleEdit(formData) {
     const updates = {
-      name: formData.name,
-      tags: formData.tags,
-      start_date: formData.start_date || null,
-      end_date: formData.end_date || null,
-      hook_size: formData.hook_size || null,
-      yarn_weight: formData.yarn_weight || null,
+      name: formData.name, tags: formData.tags,
+      start_date: formData.start_date || null, end_date: formData.end_date || null,
+      hook_size: formData.hook_size || null, yarn_weight: formData.yarn_weight || null,
       status: formData.status,
     }
     if (formData.status === 'completed' && !project.completed) {
       updates.completed = new Date().toISOString()
     }
     const { data, error } = await supabase
-      .from('projects')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+      .from('projects').update(updates).eq('id', id).select().single()
     if (error) throw new Error(error.message)
     setProject(data)
     setShowEdit(false)
   }
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-      </div>
-    )
+  function toggleDrawer(name) {
+    setActiveDrawer(prev => prev === name ? null : name)
   }
+  function prevImg() { setActiveImg(i => Math.max(0, i - 1)) }
+  function nextImg() { setActiveImg(i => Math.min(imageCount - 1, i + 1)) }
 
-  if (!project) {
-    return (
-      <div className={styles.notFound}>
-        <p>找不到该项目</p>
-        <button onClick={() => navigate('/')}>返回首页</button>
-      </div>
-    )
-  }
+  if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>
+  if (!project) return (
+    <div className={styles.notFound}>
+      <p>找不到该项目</p>
+      <button onClick={() => navigate('/')}>返回首页</button>
+    </div>
+  )
 
   return (
     <div className={styles.page}>
@@ -153,9 +196,18 @@ export default function ProjectPage({ user }) {
         )}
       </div>
 
-      {/* Content: MiniCounter strip + full pattern viewer */}
+      {/* Content: MiniCounter strip + pattern viewer */}
       <div className={styles.content}>
-        <MiniCounter projectId={id} user={user} />
+        {countersReady && (
+          <MiniCounter
+            counters={counters}
+            onIncrement={id => updateCount(id, 1)}
+            onDecrement={id => updateCount(id, -1)}
+            onReset={resetCounter}
+            onRename={renameCounter}
+            user={user}
+          />
+        )}
         <div className={styles.patternArea}>
           <PatternViewer
             ref={patternRef}
@@ -233,10 +285,9 @@ export default function ProjectPage({ user }) {
         </div>
       </div>
 
-      {/* Annotation mode hint bar */}
       {annotationMode && (
         <div className={styles.annotationHint}>
-          点击图解任意位置添加注释 · 再次点击工具栏「注释」退出
+          点击图解任意位置添加注释 · 再次点击「注释」退出
         </div>
       )}
 
@@ -254,7 +305,17 @@ export default function ProjectPage({ user }) {
         </div>
         <div className={styles.drawerContent}>
           <div style={{ display: activeDrawer === 'counter' ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
-            <CounterPanel projectId={id} user={user} />
+            <CounterPanel
+              counters={counters}
+              onIncrement={id => updateCount(id, 1)}
+              onDecrement={id => updateCount(id, -1)}
+              onReset={resetCounter}
+              onAdd={addCounter}
+              onDelete={deleteCounter}
+              onRename={renameCounter}
+              maxCounters={MAX_COUNTERS}
+              user={user}
+            />
           </div>
           <div style={{ display: activeDrawer === 'notes' ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
             <NotesPanel projectId={id} user={user} />
@@ -263,11 +324,7 @@ export default function ProjectPage({ user }) {
       </div>
 
       {showEdit && (
-        <ProjectFormModal
-          project={project}
-          onSave={handleEdit}
-          onClose={() => setShowEdit(false)}
-        />
+        <ProjectFormModal project={project} onSave={handleEdit} onClose={() => setShowEdit(false)} />
       )}
     </div>
   )
