@@ -8,6 +8,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  padding-top: calc(52px + 24px); /* clear sticky header */
 }
 
 .modal {
