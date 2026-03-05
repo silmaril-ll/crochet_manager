@@ -5,6 +5,42 @@ import styles from './YarnPage.module.css'
 // 直接显示原始值
 const WEIGHT_LABEL = (w) => w || ''
 
+function compressImage(file, maxKB = 300) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let { width, height } = img
+        const maxPx = 800
+        if (width > maxPx || height > maxPx) {
+          const ratio = Math.min(maxPx / width, maxPx / height)
+          width = Math.round(width * ratio)
+          height = Math.round(height * ratio)
+        }
+        canvas.width = width
+        canvas.height = height
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+        let quality = 0.82
+        const tryCompress = () => {
+          canvas.toBlob((blob) => {
+            if (blob.size > maxKB * 1024 && quality > 0.3) {
+              quality -= 0.1
+              tryCompress()
+            } else {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+            }
+          }, 'image/jpeg', quality)
+        }
+        tryCompress()
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function YarnPage({ user }) {
   const [yarns, setYarns] = useState([])
   const [loading, setLoading] = useState(true)
@@ -158,8 +194,9 @@ function YarnFormSheet({ yarn, onSave, onClose }) {
     const file = e.target.files[0]
     if (!file) return
     setUploading(true)
+    const compressed = await compressImage(file, 300)
     const path = `yarn/${Date.now()}.jpg`
-    const { error } = await supabase.storage.from('yarn-thumbnails').upload(path, file)
+    const { error } = await supabase.storage.from('yarn-thumbnails').upload(path, compressed)
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('yarn-thumbnails').getPublicUrl(path)
       set('thumbnail_url', publicUrl)
