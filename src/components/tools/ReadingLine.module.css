@@ -34,7 +34,7 @@
 
 .controls {
   position: absolute;
-  bottom: 12px;
+  bottom: calc(56px + var(--safe-bottom) + 12px);
   right: 12px;
   display: flex;
   gap: 6px;

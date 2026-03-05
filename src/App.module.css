@@ -58,3 +58,8 @@
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: none; /* 禁止下拉刷新 */
 }
+
+.mainProject {
+  overflow: hidden;
+  padding-bottom: 0;
+}

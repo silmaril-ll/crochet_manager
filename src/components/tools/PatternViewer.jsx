@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { supabase } from '../../lib/supabase'
 import ReadingLine from './ReadingLine'
 import styles from './PatternViewer.module.css'
@@ -40,14 +40,18 @@ function compressImage(file, maxKB = 500) {
   })
 }
 
-export default function PatternViewer({ projectId, user }) {
+const PatternViewer = forwardRef(function PatternViewer(
+  { projectId, user, showReadingLine, activeImg, onActiveImgChange, onImagesLoaded, onUploadingChange },
+  ref
+) {
   const [images, setImages] = useState([])
   const [pdfs, setPdfs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [activeImg, setActiveImg] = useState(0)
-  const [showReadingLine, setShowReadingLine] = useState(false)
   const fileRef = useRef()
+
+  useImperativeHandle(ref, () => ({
+    triggerUpload: () => fileRef.current?.click(),
+  }))
 
   const loadFiles = useCallback(async () => {
     const { data } = await supabase
@@ -56,18 +60,21 @@ export default function PatternViewer({ projectId, user }) {
       .eq('project_id', projectId)
       .order('sort_order', { ascending: true })
     if (data) {
-      setImages(data.filter(f => f.file_type === 'image'))
-      setPdfs(data.filter(f => f.file_type === 'pdf'))
+      const imgs = data.filter(f => f.file_type === 'image')
+      const pdfList = data.filter(f => f.file_type === 'pdf')
+      setImages(imgs)
+      setPdfs(pdfList)
+      onImagesLoaded?.(imgs.length)
     }
     setLoading(false)
-  }, [projectId])
+  }, [projectId, onImagesLoaded])
 
   useEffect(() => { loadFiles() }, [loadFiles])
 
   async function handleUpload(e) {
     const files = Array.from(e.target.files)
     if (!files.length) return
-    setUploading(true)
+    onUploadingChange?.(true)
 
     for (const file of files) {
       const isPdf = file.type === 'application/pdf'
@@ -100,18 +107,20 @@ export default function PatternViewer({ projectId, user }) {
     }
 
     await loadFiles()
-    setUploading(false)
+    onUploadingChange?.(false)
     e.target.value = ''
   }
 
   async function handleDelete(file) {
     await supabase.storage.from('patterns').remove([file.storage_path])
     await supabase.from('pattern_files').delete().eq('id', file.id)
+    onActiveImgChange?.(0)
     await loadFiles()
-    setActiveImg(0)
   }
 
   if (loading) return <div className={styles.empty}>加载中…</div>
+
+  const currentImg = images[activeImg] ?? images[0]
 
   return (
     <div className={styles.viewer}>
@@ -134,62 +143,26 @@ export default function PatternViewer({ projectId, user }) {
       {/* Image viewer */}
       <div className={styles.imageArea}>
         {images.length > 0 ? (
-          <>
-            <div className={styles.mainImg}>
-              <img
-                key={images[activeImg]?.id}
-                src={images[activeImg]?.url}
-                alt="图解"
-                className={styles.patternImg}
-              />
-              {showReadingLine && (
-                <ReadingLine projectId={projectId} />
-              )}
-            </div>
-
-            {/* Controls */}
-            <div className={styles.controls}>
-              <button
-                className={`${styles.controlBtn} ${showReadingLine ? styles.active : ''}`}
-                onClick={() => setShowReadingLine(v => !v)}
-                title="阅读辅助线"
-              >
-                阅读线
-              </button>
-              {user && (
-                <button className={styles.controlBtn} onClick={() => fileRef.current.click()} disabled={uploading}>
-                  {uploading ? '上传中…' : '+ 上传'}
-                </button>
-              )}
-            </div>
-
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className={styles.thumbRow}>
-                {images.map((img, i) => (
-                  <div key={img.id} className={styles.thumbWrap}>
-                    <img
-                      src={img.url}
-                      alt=""
-                      className={`${styles.thumb} ${i === activeImg ? styles.thumbActive : ''}`}
-                      onClick={() => setActiveImg(i)}
-                    />
-                    {user && (
-                      <button className={styles.thumbDelete} onClick={() => handleDelete(img)}>×</button>
-                    )}
-                  </div>
-                ))}
-              </div>
+          <div className={styles.mainImg}>
+            <img
+              key={currentImg?.id}
+              src={currentImg?.url}
+              alt="图解"
+              className={styles.patternImg}
+            />
+            {showReadingLine && (
+              <ReadingLine projectId={projectId} />
             )}
-          </>
+            {user && currentImg && (
+              <button className={styles.deleteImgBtn} onClick={() => handleDelete(currentImg)}>
+                删除此图
+              </button>
+            )}
+          </div>
         ) : (
           <div className={styles.empty}>
             <span>暂无图解</span>
-            {user && (
-              <button className={styles.uploadBtn} onClick={() => fileRef.current.click()} disabled={uploading}>
-                {uploading ? '上传中…' : '上传图解或 PDF'}
-              </button>
-            )}
+            <span className={styles.emptyHint}>点击下方上传按钮添加</span>
           </div>
         )}
       </div>
@@ -204,4 +177,6 @@ export default function PatternViewer({ projectId, user }) {
       />
     </div>
   )
-}
+})
+
+export default PatternViewer
