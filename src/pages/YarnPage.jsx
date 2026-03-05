@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
+import { uploadToCloudinary } from '../lib/cloudinary'
 import styles from './YarnPage.module.css'
 
 // 直接显示原始值
@@ -86,11 +87,6 @@ export default function YarnPage({ user }) {
 
   async function handleDelete(id) {
     if (!confirm('确认删除该线材？')) return
-    // Also delete thumbnail from storage if exists
-    const yarn = yarns.find(y => y.id === id)
-    if (yarn?.thumbnail_path) {
-      await supabase.storage.from('yarn-thumbnails').remove([yarn.thumbnail_path])
-    }
     await supabase.from('yarn').delete().eq('id', id)
     setYarns(prev => prev.filter(y => y.id !== id))
   }
@@ -212,13 +208,13 @@ function YarnFormSheet({ yarn, onSave, onClose }) {
     const file = e.target.files[0]
     if (!file) return
     setUploading(true)
-    const compressed = await compressImage(file, 300)
-    const path = `yarn/${Date.now()}.jpg`
-    const { error } = await supabase.storage.from('yarn-thumbnails').upload(path, compressed)
-    if (!error) {
-      const { data: { publicUrl } } = supabase.storage.from('yarn-thumbnails').getPublicUrl(path)
-      set('thumbnail_url', publicUrl)
-      set('thumbnail_path', path)
+    try {
+      const compressed = await compressImage(file, 300)
+      const { secureUrl, publicId } = await uploadToCloudinary(compressed)
+      set('thumbnail_url', secureUrl)
+      set('thumbnail_path', publicId)  // store Cloudinary public_id
+    } catch (err) {
+      console.error('Yarn thumbnail upload error:', err)
     }
     setUploading(false)
     e.target.value = ''

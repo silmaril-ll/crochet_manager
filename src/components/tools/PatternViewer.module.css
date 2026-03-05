@@ -63,6 +63,12 @@
   padding-bottom: calc(56px + var(--safe-bottom));
 }
 
+.imgWrapper {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+
 .patternImg {
   width: 100%;
   display: block;

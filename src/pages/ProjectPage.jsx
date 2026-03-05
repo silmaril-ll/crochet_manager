@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import PatternViewer from '../components/tools/PatternViewer'
+import MiniCounter from '../components/tools/MiniCounter'
 import CounterPanel from '../components/tools/CounterPanel'
 import NotesPanel from '../components/tools/NotesPanel'
 import ProjectFormModal from '../components/projects/ProjectFormModal'
@@ -32,6 +33,13 @@ const IconReadingLine = (
   </svg>
 )
 
+const IconAnnotate = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="10" r="2"/>
+    <path d="M12 2C7.03 2 3 6.03 3 11c0 3.1 1.53 5.83 3.88 7.5L6 22l4-2h2c4.97 0 9-4.03 9-9S16.97 2 12 2z"/>
+  </svg>
+)
+
 const IconUpload = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -47,8 +55,9 @@ export default function ProjectPage({ user }) {
   const [loading, setLoading] = useState(true)
   const [showEdit, setShowEdit] = useState(false)
 
-  const [activeDrawer, setActiveDrawer] = useState(null) // 'counter' | 'notes' | null
+  const [activeDrawer, setActiveDrawer] = useState(null)  // 'counter' | 'notes' | null
   const [showReadingLine, setShowReadingLine] = useState(false)
+  const [annotationMode, setAnnotationMode] = useState(false)
   const [activeImg, setActiveImg] = useState(0)
   const [imageCount, setImageCount] = useState(0)
   const [uploading, setUploading] = useState(false)
@@ -120,7 +129,7 @@ export default function ProjectPage({ user }) {
 
   return (
     <div className={styles.page}>
-      {/* Header */}
+      {/* Compact project header */}
       <div className={styles.header}>
         <button className={styles.back} onClick={() => navigate('/')}>
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -144,18 +153,22 @@ export default function ProjectPage({ user }) {
         )}
       </div>
 
-      {/* Pattern viewer */}
+      {/* Content: MiniCounter strip + full pattern viewer */}
       <div className={styles.content}>
-        <PatternViewer
-          ref={patternRef}
-          projectId={id}
-          user={user}
-          showReadingLine={showReadingLine}
-          activeImg={activeImg}
-          onActiveImgChange={setActiveImg}
-          onImagesLoaded={setImageCount}
-          onUploadingChange={setUploading}
-        />
+        <MiniCounter projectId={id} user={user} />
+        <div className={styles.patternArea}>
+          <PatternViewer
+            ref={patternRef}
+            projectId={id}
+            user={user}
+            showReadingLine={showReadingLine}
+            annotationMode={annotationMode}
+            activeImg={activeImg}
+            onActiveImgChange={setActiveImg}
+            onImagesLoaded={setImageCount}
+            onUploadingChange={setUploading}
+          />
+        </div>
       </div>
 
       {/* Bottom toolbar */}
@@ -181,6 +194,13 @@ export default function ProjectPage({ user }) {
           >
             <span className={styles.toolBtnIcon}>{IconReadingLine}</span>
             <span className={styles.toolBtnLabel}>阅读线</span>
+          </button>
+          <button
+            className={`${styles.toolBtn} ${annotationMode ? styles.toolBtnActive : ''}`}
+            onClick={() => setAnnotationMode(v => !v)}
+          >
+            <span className={styles.toolBtnIcon}>{IconAnnotate}</span>
+            <span className={styles.toolBtnLabel}>注释</span>
           </button>
         </div>
 
@@ -212,6 +232,13 @@ export default function ProjectPage({ user }) {
           )}
         </div>
       </div>
+
+      {/* Annotation mode hint bar */}
+      {annotationMode && (
+        <div className={styles.annotationHint}>
+          点击图解任意位置添加注释 · 再次点击工具栏「注释」退出
+        </div>
+      )}
 
       {/* Drawer backdrop */}
       <div
