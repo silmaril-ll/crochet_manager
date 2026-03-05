@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import AuthModal from '../auth/AuthModal'
 import styles from './AuthDot.module.css'
 
@@ -34,11 +35,12 @@ export default function AuthDot({ user, onSignIn, onSignOut }) {
         onClick={() => setShowModal(true)}
         title="登录"
       />
-      {showModal && (
+      {showModal && createPortal(
         <AuthModal
           onSignIn={onSignIn}
           onClose={() => setShowModal(false)}
-        />
+        />,
+        document.body
       )}
     </div>
   )

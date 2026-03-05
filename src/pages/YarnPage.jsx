@@ -48,15 +48,19 @@ export default function YarnPage({ user }) {
   const [editingYarn, setEditingYarn] = useState(null)
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('yarn')
-      .select('*')
-      .order('id', { ascending: false })
-    if (data) setYarns(data)
-    setLoading(false)
+    setLoading(true)
+    try {
+      const { data } = await supabase
+        .from('yarn')
+        .select('*')
+        .order('id', { ascending: false })
+      if (data) setYarns(data)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load() }, [load, user])
 
   async function handleSave(formData) {
     if (editingYarn) {
