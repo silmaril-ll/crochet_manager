@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS projects (
   created     TIMESTAMPTZ DEFAULT NOW(),
   completed   TIMESTAMPTZ,
   start_date  DATE,
+  end_date    DATE,
   hook_size   TEXT,
   yarn_weight TEXT,
   thumbnail_url TEXT,
