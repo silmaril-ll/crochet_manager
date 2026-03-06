@@ -52,6 +52,10 @@ export default function HomePage({ user }) {
         (p.tags || []).some(t => t.toLowerCase().includes(q))
     })
     .sort((a, b) => {
+      const statusOrder = { 'in-progress': 0, 'paused': 1, 'completed': 2 }
+      const sa = statusOrder[a.status] ?? 0
+      const sb = statusOrder[b.status] ?? 0
+      if (sa !== sb) return sa - sb
       if (sortBy === 'name') return a.name.localeCompare(b.name, 'zh-CN')
       if (sortBy === 'opened') return (b.last_opened || b.created) > (a.last_opened || a.created) ? 1 : -1
       return b.created > a.created ? 1 : -1
