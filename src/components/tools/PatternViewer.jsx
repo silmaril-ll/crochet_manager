@@ -59,7 +59,9 @@ const PatternViewer = forwardRef(function PatternViewer(
   const pinchRef = useRef(null)
   const imgScaleRef = useRef(1)
   const imgWrapperRef = useRef()
+  const scrollContainerRef = useRef()
   const lastTapRef = useRef(0)
+  const pinchJustEndedRef = useRef(0)
   const fileRef = useRef()
 
   useImperativeHandle(ref, () => ({
@@ -88,6 +90,10 @@ const PatternViewer = forwardRef(function PatternViewer(
   useEffect(() => {
     setImgScale(1)
     imgScaleRef.current = 1
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 0
+      scrollContainerRef.current.scrollTop = 0
+    }
   }, [activeImg])
 
   // Pinch-to-zoom (re-run after loading so imgWrapperRef is set)
@@ -100,24 +106,50 @@ const PatternViewer = forwardRef(function PatternViewer(
       return Math.sqrt(dx * dx + dy * dy)
     }
     function onTouchStart(e) {
-      if (e.touches.length === 2)
-        pinchRef.current = { startDist: getTouchDist(e.touches), startScale: imgScaleRef.current }
+      if (e.touches.length === 2) {
+        const scrollEl = scrollContainerRef.current
+        const rect = scrollEl.getBoundingClientRect()
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+        pinchRef.current = {
+          startDist: getTouchDist(e.touches),
+          startScale: imgScaleRef.current,
+          midX, midY,
+          startScrollLeft: scrollEl.scrollLeft,
+          startScrollTop: scrollEl.scrollTop,
+          rect,
+        }
+      }
     }
     function onTouchMove(e) {
       if (e.touches.length === 2 && pinchRef.current) {
         e.preventDefault()
+        const { startDist, startScale, midX, midY, startScrollLeft, startScrollTop, rect } = pinchRef.current
         const newScale = Math.min(5, Math.max(1,
-          pinchRef.current.startScale * getTouchDist(e.touches) / pinchRef.current.startDist))
+          startScale * getTouchDist(e.touches) / startDist))
         setImgScale(newScale)
         imgScaleRef.current = newScale
+        // Keep pinch midpoint fixed in viewport
+        const scrollEl = scrollContainerRef.current
+        const docX = startScrollLeft + (midX - rect.left)
+        const docY = startScrollTop + (midY - rect.top)
+        scrollEl.scrollLeft = docX * (newScale / startScale) - (midX - rect.left)
+        scrollEl.scrollTop = docY * (newScale / startScale) - (midY - rect.top)
       }
     }
     function onTouchEnd(e) {
       if (e.touches.length < 2) {
+        if (pinchRef.current) pinchJustEndedRef.current = Date.now()
         pinchRef.current = null
-        if (e.changedTouches.length === 1) {
+        // Double-tap to reset zoom, but ignore taps right after a pinch ends
+        if (e.touches.length === 0 && e.changedTouches.length === 1) {
           const now = Date.now()
-          if (now - lastTapRef.current < 300) { setImgScale(1); imgScaleRef.current = 1 }
+          if (now - lastTapRef.current < 300 && now - pinchJustEndedRef.current > 400) {
+            setImgScale(1)
+            imgScaleRef.current = 1
+            const scrollEl = scrollContainerRef.current
+            if (scrollEl) { scrollEl.scrollLeft = 0; scrollEl.scrollTop = 0 }
+          }
           lastTapRef.current = now
         }
       }
@@ -264,7 +296,7 @@ const PatternViewer = forwardRef(function PatternViewer(
       {/* Image viewer */}
       <div className={styles.imageArea}>
         {images.length > 0 ? (
-          <div className={styles.mainImg}>
+          <div className={styles.mainImg} ref={scrollContainerRef}>
             <div className={styles.imgWrapper} ref={imgWrapperRef}>
               <img
                 key={currentImg?.id}
@@ -274,12 +306,14 @@ const PatternViewer = forwardRef(function PatternViewer(
                 style={imgScale !== 1 ? { width: `${imgScale * 100}%` } : undefined}
               />
               {showReadingLine && <ReadingLine projectId={projectId} />}
-              <ImageAnnotations
-                projectId={projectId}
-                pageIndex={activeImg}
-                annotationMode={annotationMode}
-                user={user}
-              />
+              {imgScale === 1 && (
+                <ImageAnnotations
+                  projectId={projectId}
+                  pageIndex={activeImg}
+                  annotationMode={annotationMode}
+                  user={user}
+                />
+              )}
             </div>
           </div>
         ) : (
