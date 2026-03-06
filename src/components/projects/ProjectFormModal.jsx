@@ -29,7 +29,14 @@ export default function ProjectFormModal({ project, onSave, onClose }) {
   const [error, setError] = useState('')
 
   function set(key, value) {
-    setForm(prev => ({ ...prev, [key]: value }))
+    setForm(prev => {
+      const next = { ...prev, [key]: value }
+      if (key === 'end_date') {
+        if (value) next.status = 'completed'
+        else if (prev.status === 'completed') next.status = 'in-progress'
+      }
+      return next
+    })
   }
 
   async function handleSave() {
