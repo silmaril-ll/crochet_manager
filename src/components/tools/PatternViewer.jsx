@@ -297,13 +297,16 @@ const PatternViewer = forwardRef(function PatternViewer(
       <div className={styles.imageArea}>
         {images.length > 0 ? (
           <div className={styles.mainImg} ref={scrollContainerRef}>
-            <div className={styles.imgWrapper} ref={imgWrapperRef}>
+            <div
+              className={styles.imgWrapper}
+              ref={imgWrapperRef}
+              style={imgScale !== 1 ? { width: `${imgScale * 100}%` } : undefined}
+            >
               <img
                 key={currentImg?.id}
                 src={currentImg?.url}
                 alt="图解"
                 className={styles.patternImg}
-                style={imgScale !== 1 ? { width: `${imgScale * 100}%` } : undefined}
               />
               {showReadingLine && <ReadingLine projectId={projectId} />}
               {imgScale === 1 && (
