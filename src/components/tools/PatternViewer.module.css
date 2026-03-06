@@ -83,7 +83,7 @@
 /* Image action buttons container */
 .imgActions {
   position: absolute;
-  top: 38px;
+  top: 62px;
   right: 10px;
   display: flex;
   flex-direction: row;
