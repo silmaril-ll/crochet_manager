@@ -26,6 +26,12 @@
   max-width: 768px;
   margin: 0 auto;
   position: relative;
+  /* Warm orb background — three soft radial glows layered over the base cream */
+  background:
+    radial-gradient(ellipse 75% 55% at 8%  12%, rgba(253, 224, 182, 0.55) 0%, transparent 62%),
+    radial-gradient(ellipse 60% 50% at 92% 88%, rgba(242, 214, 188, 0.45) 0%, transparent 62%),
+    radial-gradient(ellipse 50% 45% at 58% 32%, rgba(255, 244, 224, 0.40) 0%, transparent 58%),
+    #F5F3EF;
 }
 
 .header {
@@ -56,10 +62,12 @@
   overflow-x: hidden;
   padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px);
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none; /* 禁止下拉刷新 */
+  overscroll-behavior-y: none;
+  background: transparent; /* let .app gradient show through */
 }
 
 .mainProject {
   overflow: hidden;
   padding-bottom: 0;
+  background: transparent;
 }
