@@ -54,7 +54,12 @@ const PatternViewer = forwardRef(function PatternViewer(
   const [pdfs, setPdfs] = useState([])
   const [loading, setLoading] = useState(true)
   const [dragOver, setDragOver] = useState(null)
+  const [imgScale, setImgScale] = useState(1)
   const dragIndexRef = useRef(null)
+  const pinchRef = useRef(null)
+  const imgScaleRef = useRef(1)
+  const imgWrapperRef = useRef()
+  const lastTapRef = useRef(0)
   const fileRef = useRef()
 
   useImperativeHandle(ref, () => ({
@@ -78,6 +83,54 @@ const PatternViewer = forwardRef(function PatternViewer(
   }, [projectId, onImagesLoaded])
 
   useEffect(() => { loadFiles() }, [loadFiles])
+
+  // Reset scale when switching images
+  useEffect(() => {
+    setImgScale(1)
+    imgScaleRef.current = 1
+  }, [activeImg])
+
+  // Pinch-to-zoom (re-run after loading so imgWrapperRef is set)
+  useEffect(() => {
+    const el = imgWrapperRef.current
+    if (!el) return
+    function getTouchDist(t) {
+      const dx = t[0].clientX - t[1].clientX
+      const dy = t[0].clientY - t[1].clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    }
+    function onTouchStart(e) {
+      if (e.touches.length === 2)
+        pinchRef.current = { startDist: getTouchDist(e.touches), startScale: imgScaleRef.current }
+    }
+    function onTouchMove(e) {
+      if (e.touches.length === 2 && pinchRef.current) {
+        e.preventDefault()
+        const newScale = Math.min(5, Math.max(1,
+          pinchRef.current.startScale * getTouchDist(e.touches) / pinchRef.current.startDist))
+        setImgScale(newScale)
+        imgScaleRef.current = newScale
+      }
+    }
+    function onTouchEnd(e) {
+      if (e.touches.length < 2) {
+        pinchRef.current = null
+        if (e.changedTouches.length === 1) {
+          const now = Date.now()
+          if (now - lastTapRef.current < 300) { setImgScale(1); imgScaleRef.current = 1 }
+          lastTapRef.current = now
+        }
+      }
+    }
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [loading])
 
   async function handleUpload(e) {
     const files = Array.from(e.target.files)
@@ -212,12 +265,13 @@ const PatternViewer = forwardRef(function PatternViewer(
       <div className={styles.imageArea}>
         {images.length > 0 ? (
           <div className={styles.mainImg}>
-            <div className={styles.imgWrapper}>
+            <div className={styles.imgWrapper} ref={imgWrapperRef}>
               <img
                 key={currentImg?.id}
                 src={currentImg?.url}
                 alt="图解"
                 className={styles.patternImg}
+                style={imgScale !== 1 ? { width: `${imgScale * 100}%` } : undefined}
               />
               {showReadingLine && <ReadingLine projectId={projectId} />}
               <ImageAnnotations
@@ -227,18 +281,6 @@ const PatternViewer = forwardRef(function PatternViewer(
                 user={user}
               />
             </div>
-            {user && currentImg && (
-              <div className={styles.imgActions}>
-                {hasMultiple && activeImg > 0 && (
-                  <button className={styles.setThumbBtn} onClick={() => handleSetThumbnail(currentImg)}>
-                    设为主图
-                  </button>
-                )}
-                <button className={styles.deleteImgBtn} onClick={() => handleDelete(currentImg)}>
-                  删除
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           <div className={styles.empty}>
@@ -248,30 +290,52 @@ const PatternViewer = forwardRef(function PatternViewer(
         )}
       </div>
 
-      {/* Thumbnail strip for reordering (shown when multiple images) */}
+      {/* Thumbnail strip + action buttons */}
       {hasMultiple && (
         <div className={styles.thumbStrip}>
-          {images.map((img, i) => (
-            <div
-              key={img.id}
-              data-thumb-index={i}
-              className={[
-                styles.thumbItem,
-                i === activeImg ? styles.thumbActive : '',
-                dragOver === i ? styles.thumbDragOver : '',
-              ].join(' ')}
-              draggable
-              onDragStart={e => handleDragStart(e, i)}
-              onDragOver={e => handleDragOver(e, i)}
-              onDragLeave={handleDragLeave}
-              onDrop={e => handleDrop(e, i)}
-              onDragEnd={handleDragEnd}
-              onClick={() => onActiveImgChange?.(i)}
-            >
-              <img src={img.url} className={styles.thumbImg} alt={`图解 ${i + 1}`} draggable={false} />
-              {i === 0 && <span className={styles.thumbBadge}>封面</span>}
+          <div className={styles.thumbScrollArea}>
+            {images.map((img, i) => (
+              <div
+                key={img.id}
+                data-thumb-index={i}
+                className={[
+                  styles.thumbItem,
+                  i === activeImg ? styles.thumbActive : '',
+                  dragOver === i ? styles.thumbDragOver : '',
+                ].join(' ')}
+                draggable
+                onDragStart={e => handleDragStart(e, i)}
+                onDragOver={e => handleDragOver(e, i)}
+                onDragLeave={handleDragLeave}
+                onDrop={e => handleDrop(e, i)}
+                onDragEnd={handleDragEnd}
+                onClick={() => onActiveImgChange?.(i)}
+              >
+                <img src={img.url} className={styles.thumbImg} alt={`图解 ${i + 1}`} draggable={false} />
+                {i === 0 && <span className={styles.thumbBadge}>封面</span>}
+              </div>
+            ))}
+          </div>
+          {user && currentImg && (
+            <div className={styles.thumbActions}>
+              {activeImg > 0 && (
+                <button className={styles.thumbActionSetMain} onClick={() => handleSetThumbnail(currentImg)}>
+                  设为主图
+                </button>
+              )}
+              <button className={styles.thumbActionDelete} onClick={() => handleDelete(currentImg)}>
+                删除
+              </button>
             </div>
-          ))}
+          )}
+        </div>
+      )}
+      {/* Single-image delete button (fixed, above toolbar) */}
+      {!hasMultiple && user && currentImg && (
+        <div className={styles.singleImgActions}>
+          <button className={styles.thumbActionDelete} onClick={() => handleDelete(currentImg)}>
+            删除
+          </button>
         </div>
       )}
 
