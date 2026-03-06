@@ -59,8 +59,8 @@
   overflow: auto;
   background: var(--bg-primary);
   -webkit-overflow-scrolling: touch;
-  /* bottom padding so image doesn't hide behind the fixed toolbar */
-  padding-bottom: calc(56px + var(--safe-bottom));
+  /* extra bottom padding clears toolbar + single-image action button */
+  padding-bottom: calc(56px + 44px + var(--safe-bottom));
 }
 
 /* Extra bottom padding when thumbnail strip is shown */
@@ -80,44 +80,13 @@
   user-select: none;
 }
 
-/* Image action buttons container */
-.imgActions {
-  position: absolute;
-  top: 62px;
-  right: 10px;
-  display: flex;
-  flex-direction: row;
-  gap: 6px;
-  align-items: center;
+/* Single-image delete button (fixed above toolbar) */
+.singleImgActions {
+  position: fixed;
+  bottom: calc(56px + var(--safe-bottom) + 10px);
+  right: 12px;
+  z-index: 50;
 }
-
-.deleteImgBtn {
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  color: var(--danger);
-  transition: background 0.15s;
-}
-
-.deleteImgBtn:hover { background: var(--danger-light); }
-
-.setThumbBtn {
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  color: var(--accent);
-  transition: background 0.15s;
-}
-
-.setThumbBtn:hover { background: var(--accent-light); }
 
 .empty {
   flex: 1;
@@ -154,16 +123,60 @@
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(212, 207, 196, 0.45);
   display: flex;
+  align-items: stretch;
+}
+
+.thumbScrollArea {
+  flex: 1;
+  min-width: 0;
+  display: flex;
   align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 6px 10px;
+  padding: 6px 6px 6px 10px;
   gap: 6px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 
-.thumbStrip::-webkit-scrollbar { display: none; }
+.thumbScrollArea::-webkit-scrollbar { display: none; }
+
+.thumbActions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 5px;
+  padding: 8px 10px;
+  border-left: 1px solid rgba(212, 207, 196, 0.4);
+}
+
+.thumbActionDelete {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--danger);
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.thumbActionDelete:hover { background: var(--danger-light); }
+
+.thumbActionSetMain {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.thumbActionSetMain:hover { background: var(--accent-light); }
 
 .thumbItem {
   flex-shrink: 0;
