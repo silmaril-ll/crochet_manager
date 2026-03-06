@@ -45,7 +45,7 @@ const PatternViewer = forwardRef(function PatternViewer(
   {
     projectId, user,
     showReadingLine,
-    activeImg, onActiveImgChange, onImagesLoaded, onUploadingChange,
+    activeImg, onActiveImgChange, onImagesLoaded, onUploadingChange, onUploadError,
     annotationMode,
   },
   ref
@@ -192,6 +192,7 @@ const PatternViewer = forwardRef(function PatternViewer(
         }
       } catch (err) {
         console.error('Upload error:', err)
+        onUploadError?.()
       }
     }
 
