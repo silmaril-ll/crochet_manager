@@ -13,7 +13,7 @@ function AppContent({ user, signIn, signOut }) {
     <div className={styles.app}>
       {!isProject && (
         <header className={styles.header}>
-          <span className={styles.logo}>Pixel's Yarn Ball</span>
+          <span className={styles.logo}>毛线助手</span>
           <AuthDot user={user} onSignIn={signIn} onSignOut={signOut} />
         </header>
       )}
