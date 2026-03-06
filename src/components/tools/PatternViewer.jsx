@@ -53,6 +53,8 @@ const PatternViewer = forwardRef(function PatternViewer(
   const [images, setImages] = useState([])
   const [pdfs, setPdfs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [dragOver, setDragOver] = useState(null)
+  const dragIndexRef = useRef(null)
   const fileRef = useRef()
 
   useImperativeHandle(ref, () => ({
@@ -93,12 +95,11 @@ const PatternViewer = forwardRef(function PatternViewer(
         await supabase.from('pattern_files').insert({
           project_id: projectId,
           url: secureUrl,
-          storage_path: publicId,  // Cloudinary public_id (for future server-side deletion)
+          storage_path: publicId,
           file_type: isPdf ? 'pdf' : 'image',
           sort_order: Date.now(),
         })
 
-        // Keep project thumbnail in sync with first uploaded image
         if (isFirstImage && !isPdf) {
           await supabase.from('projects')
             .update({ thumbnail_url: secureUrl })
@@ -115,18 +116,82 @@ const PatternViewer = forwardRef(function PatternViewer(
   }
 
   async function handleDelete(file) {
-    // Remove from DB only; Cloudinary deletion requires server-side API secret
     await supabase.from('pattern_files').delete().eq('id', file.id)
     onActiveImgChange?.(0)
     await loadFiles()
   }
 
+  // Move image to first position and update project thumbnail
+  async function handleSetThumbnail(file) {
+    const idx = images.findIndex(img => img.id === file.id)
+    if (idx <= 0) return
+    const newImages = [...images]
+    newImages.splice(idx, 1)
+    newImages.unshift(file)
+    setImages(newImages)
+    onActiveImgChange?.(0)
+    await Promise.all([
+      ...newImages.map((img, i) =>
+        supabase.from('pattern_files').update({ sort_order: (i + 1) * 1000 }).eq('id', img.id)
+      ),
+      supabase.from('projects').update({ thumbnail_url: file.url }).eq('id', projectId),
+    ])
+  }
+
+  // Drag reorder handlers
+  function handleDragStart(e, index) {
+    dragIndexRef.current = index
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function handleDragOver(e, index) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOver(index)
+  }
+
+  function handleDragLeave() {
+    setDragOver(null)
+  }
+
+  async function handleDrop(e, index) {
+    e.preventDefault()
+    setDragOver(null)
+    const from = dragIndexRef.current
+    if (from === null || from === index) return
+    dragIndexRef.current = null
+
+    const newImages = [...images]
+    const [moved] = newImages.splice(from, 1)
+    newImages.splice(index, 0, moved)
+    setImages(newImages)
+
+    // Keep activeImg tracking the same image
+    let newActive = activeImg
+    if (activeImg === from) newActive = index
+    else if (from < activeImg && index >= activeImg) newActive = activeImg - 1
+    else if (from > activeImg && index <= activeImg) newActive = activeImg + 1
+    onActiveImgChange?.(newActive)
+
+    await Promise.all(
+      newImages.map((img, i) =>
+        supabase.from('pattern_files').update({ sort_order: (i + 1) * 1000 }).eq('id', img.id)
+      )
+    )
+  }
+
+  function handleDragEnd() {
+    dragIndexRef.current = null
+    setDragOver(null)
+  }
+
   if (loading) return <div className={styles.empty}>加载中…</div>
 
   const currentImg = images[activeImg] ?? images[0]
+  const hasMultiple = images.length > 1
 
   return (
-    <div className={styles.viewer}>
+    <div className={`${styles.viewer} ${hasMultiple ? styles.viewerWithStrip : ''}`}>
       {/* PDF list */}
       {pdfs.length > 0 && (
         <div className={styles.pdfList}>
@@ -147,7 +212,6 @@ const PatternViewer = forwardRef(function PatternViewer(
       <div className={styles.imageArea}>
         {images.length > 0 ? (
           <div className={styles.mainImg}>
-            {/* imgWrapper: position:relative anchor for all overlays */}
             <div className={styles.imgWrapper}>
               <img
                 key={currentImg?.id}
@@ -164,9 +228,16 @@ const PatternViewer = forwardRef(function PatternViewer(
               />
             </div>
             {user && currentImg && (
-              <button className={styles.deleteImgBtn} onClick={() => handleDelete(currentImg)}>
-                删除此图
-              </button>
+              <div className={styles.imgActions}>
+                {hasMultiple && activeImg > 0 && (
+                  <button className={styles.setThumbBtn} onClick={() => handleSetThumbnail(currentImg)}>
+                    设为项目图
+                  </button>
+                )}
+                <button className={styles.deleteImgBtn} onClick={() => handleDelete(currentImg)}>
+                  删除此图
+                </button>
+              </div>
             )}
           </div>
         ) : (
@@ -176,6 +247,33 @@ const PatternViewer = forwardRef(function PatternViewer(
           </div>
         )}
       </div>
+
+      {/* Thumbnail strip for reordering (shown when multiple images) */}
+      {hasMultiple && (
+        <div className={styles.thumbStrip}>
+          {images.map((img, i) => (
+            <div
+              key={img.id}
+              data-thumb-index={i}
+              className={[
+                styles.thumbItem,
+                i === activeImg ? styles.thumbActive : '',
+                dragOver === i ? styles.thumbDragOver : '',
+              ].join(' ')}
+              draggable
+              onDragStart={e => handleDragStart(e, i)}
+              onDragOver={e => handleDragOver(e, i)}
+              onDragLeave={handleDragLeave}
+              onDrop={e => handleDrop(e, i)}
+              onDragEnd={handleDragEnd}
+              onClick={() => onActiveImgChange?.(i)}
+            >
+              <img src={img.url} className={styles.thumbImg} alt={`图解 ${i + 1}`} draggable={false} />
+              {i === 0 && <span className={styles.thumbBadge}>封面</span>}
+            </div>
+          ))}
+        </div>
+      )}
 
       <input
         ref={fileRef}

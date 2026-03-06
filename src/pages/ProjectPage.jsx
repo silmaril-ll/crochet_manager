@@ -196,18 +196,8 @@ export default function ProjectPage({ user }) {
         )}
       </div>
 
-      {/* Content: MiniCounter strip + pattern viewer */}
+      {/* Content: pattern viewer (full height) + MiniCounter overlay */}
       <div className={styles.content}>
-        {countersReady && (
-          <MiniCounter
-            counters={counters}
-            onIncrement={id => updateCount(id, 1)}
-            onDecrement={id => updateCount(id, -1)}
-            onReset={resetCounter}
-            onRename={renameCounter}
-            user={user}
-          />
-        )}
         <div className={styles.patternArea}>
           <PatternViewer
             ref={patternRef}
@@ -221,6 +211,16 @@ export default function ProjectPage({ user }) {
             onUploadingChange={setUploading}
           />
         </div>
+        {countersReady && (
+          <MiniCounter
+            counters={counters}
+            onIncrement={id => updateCount(id, 1)}
+            onDecrement={id => updateCount(id, -1)}
+            onReset={resetCounter}
+            onRename={renameCounter}
+            user={user}
+          />
+        )}
       </div>
 
       {/* Bottom toolbar */}
