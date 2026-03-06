@@ -229,14 +229,14 @@ const PatternViewer = forwardRef(function PatternViewer(
             </div>
             {user && currentImg && (
               <div className={styles.imgActions}>
+                <button className={styles.deleteImgBtn} onClick={() => handleDelete(currentImg)}>
+                  删除此图
+                </button>
                 {hasMultiple && activeImg > 0 && (
                   <button className={styles.setThumbBtn} onClick={() => handleSetThumbnail(currentImg)}>
                     设为项目图
                   </button>
                 )}
-                <button className={styles.deleteImgBtn} onClick={() => handleDelete(currentImg)}>
-                  删除此图
-                </button>
               </div>
             )}
           </div>
