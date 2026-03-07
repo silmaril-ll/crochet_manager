@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import styles from './CounterPanel.module.css'
 
 // Purely presentational — all state and DB ops are owned by ProjectPage.
@@ -12,6 +12,8 @@ export default function CounterPanel({
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
+  const [confirmingId, setConfirmingId] = useState(null)
+  const confirmTimer = useRef()
 
   function startEdit(counter) {
     setEditingId(counter.id)
@@ -27,6 +29,18 @@ export default function CounterPanel({
     await onAdd?.(newName.trim())
     setNewName('')
     setAdding(false)
+  }
+
+  function handleResetClick(counterId) {
+    if (confirmingId === counterId) {
+      clearTimeout(confirmTimer.current)
+      setConfirmingId(null)
+      onReset?.(counterId)
+    } else {
+      clearTimeout(confirmTimer.current)
+      setConfirmingId(counterId)
+      confirmTimer.current = setTimeout(() => setConfirmingId(null), 2500)
+    }
   }
 
   const atMax = counters.length >= maxCounters
@@ -64,7 +78,13 @@ export default function CounterPanel({
               <div className={styles.number}>{counter.count}</div>
               <div className={styles.btns}>
                 <button className={styles.countBtn} onClick={() => onDecrement?.(counter.id)}>−</button>
-                <button className={styles.countBtn} onClick={() => onReset?.(counter.id)} title="归零">↺</button>
+                <button
+                  className={`${styles.countBtn} ${confirmingId === counter.id ? styles.countBtnConfirm : ''}`}
+                  onClick={() => handleResetClick(counter.id)}
+                  title={confirmingId === counter.id ? '再次点击确认归零' : '归零'}
+                >
+                  {confirmingId === counter.id ? '?' : '↺'}
+                </button>
                 <button className={styles.countBtn} onClick={() => onIncrement?.(counter.id)}>+</button>
               </div>
             </div>

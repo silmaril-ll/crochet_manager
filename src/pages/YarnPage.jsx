@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { uploadToCloudinary } from '../lib/cloudinary'
+import { useToast, Toast } from '../components/ui/Toast'
 import styles from './YarnPage.module.css'
 
 // 直接显示原始值
@@ -48,6 +49,7 @@ export default function YarnPage({ user }) {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingYarn, setEditingYarn] = useState(null)
+  const { toastMessage, showError } = useToast()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -65,29 +67,36 @@ export default function YarnPage({ user }) {
   useEffect(() => { load() }, [load, user])
 
   async function handleSave(formData) {
-    if (editingYarn) {
-      const { data } = await supabase
-        .from('yarn')
-        .update(formData)
-        .eq('id', editingYarn.id)
-        .select()
-        .single()
-      if (data) setYarns(prev => prev.map(y => y.id === editingYarn.id ? data : y))
-    } else {
-      const { data } = await supabase
-        .from('yarn')
-        .insert(formData)
-        .select()
-        .single()
-      if (data) setYarns(prev => [data, ...prev])
+    try {
+      if (editingYarn) {
+        const { data, error } = await supabase
+          .from('yarn')
+          .update(formData)
+          .eq('id', editingYarn.id)
+          .select()
+          .single()
+        if (error) throw error
+        if (data) setYarns(prev => prev.map(y => y.id === editingYarn.id ? data : y))
+      } else {
+        const { data, error } = await supabase
+          .from('yarn')
+          .insert(formData)
+          .select()
+          .single()
+        if (error) throw error
+        if (data) setYarns(prev => [data, ...prev])
+      }
+      setShowForm(false)
+      setEditingYarn(null)
+    } catch {
+      showError('保存失败，请重试')
     }
-    setShowForm(false)
-    setEditingYarn(null)
   }
 
   async function handleDelete(id) {
     if (!confirm('确认删除该线材？')) return
-    await supabase.from('yarn').delete().eq('id', id)
+    const { error } = await supabase.from('yarn').delete().eq('id', id)
+    if (error) { showError('删除失败，请重试'); return }
     setYarns(prev => prev.filter(y => y.id !== id))
   }
 
@@ -144,6 +153,8 @@ export default function YarnPage({ user }) {
           onClose={() => { setShowForm(false); setEditingYarn(null) }}
         />
       )}
+
+      <Toast message={toastMessage} />
     </div>
   )
 }

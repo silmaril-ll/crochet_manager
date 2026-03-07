@@ -105,6 +105,12 @@
   transform: scale(0.92);
 }
 
+.countBtnConfirm {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+  background: var(--danger-light) !important;
+}
+
 .deleteBtn {
   margin-top: 12px;
   font-size: 12px;

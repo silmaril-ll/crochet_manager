@@ -45,7 +45,7 @@ const PatternViewer = forwardRef(function PatternViewer(
   {
     projectId, user,
     showReadingLine,
-    activeImg, onActiveImgChange, onImagesLoaded, onUploadingChange,
+    activeImg, onActiveImgChange, onImagesLoaded, onUploadingChange, onUploadError,
     annotationMode,
   },
   ref
@@ -192,6 +192,7 @@ const PatternViewer = forwardRef(function PatternViewer(
         }
       } catch (err) {
         console.error('Upload error:', err)
+        onUploadError?.()
       }
     }
 
@@ -297,13 +298,16 @@ const PatternViewer = forwardRef(function PatternViewer(
       <div className={styles.imageArea}>
         {images.length > 0 ? (
           <div className={styles.mainImg} ref={scrollContainerRef}>
-            <div className={styles.imgWrapper} ref={imgWrapperRef}>
+            <div
+              className={styles.imgWrapper}
+              ref={imgWrapperRef}
+              style={imgScale !== 1 ? { width: `${imgScale * 100}%` } : undefined}
+            >
               <img
                 key={currentImg?.id}
                 src={currentImg?.url}
                 alt="图解"
                 className={styles.patternImg}
-                style={imgScale !== 1 ? { width: `${imgScale * 100}%` } : undefined}
               />
               {showReadingLine && <ReadingLine projectId={projectId} />}
               {imgScale === 1 && (

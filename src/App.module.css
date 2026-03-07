@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  max-width: 768px;
+  max-width: 1024px;
   margin: 0 auto;
   position: relative;
   /* Warm orb background — three soft radial glows layered over the base cream */

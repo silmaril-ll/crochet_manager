@@ -6,6 +6,7 @@ import MiniCounter from '../components/tools/MiniCounter'
 import CounterPanel from '../components/tools/CounterPanel'
 import NotesPanel from '../components/tools/NotesPanel'
 import ProjectFormModal from '../components/projects/ProjectFormModal'
+import { useToast, Toast } from '../components/ui/Toast'
 import styles from './ProjectPage.module.css'
 
 const MAX_COUNTERS = 3
@@ -66,6 +67,7 @@ export default function ProjectPage({ user }) {
   const [uploading, setUploading] = useState(false)
 
   const patternRef = useRef()
+  const { toastMessage, showError } = useToast()
 
   // ── Project ──
   const loadProject = useCallback(async () => {
@@ -109,33 +111,38 @@ export default function ProjectPage({ user }) {
     if (!counter) return
     const newCount = Math.max(0, counter.count + delta)
     setCounters(prev => prev.map(c => c.id === counterId ? { ...c, count: newCount } : c))
-    await supabase.from('counters').update({ count: newCount }).eq('id', counterId)
+    const { error } = await supabase.from('counters').update({ count: newCount }).eq('id', counterId)
+    if (error) showError('保存失败，请检查网络连接')
   }
 
   async function resetCounter(counterId) {
     setCounters(prev => prev.map(c => c.id === counterId ? { ...c, count: 0 } : c))
-    await supabase.from('counters').update({ count: 0 }).eq('id', counterId)
+    const { error } = await supabase.from('counters').update({ count: 0 }).eq('id', counterId)
+    if (error) showError('保存失败，请检查网络连接')
   }
 
   async function addCounter(name) {
     if (counters.length >= MAX_COUNTERS) return
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('counters')
       .insert({ project_id: id, name: name || `计数器 ${counters.length + 1}`, count: 0 })
       .select().single()
+    if (error) { showError('添加失败，请重试'); return }
     if (data) setCounters(prev => [...prev, data])
   }
 
   async function deleteCounter(counterId) {
     if (!confirm('删除该计数器？')) return
     setCounters(prev => prev.filter(c => c.id !== counterId))
-    await supabase.from('counters').delete().eq('id', counterId)
+    const { error } = await supabase.from('counters').delete().eq('id', counterId)
+    if (error) showError('删除失败，请重试')
   }
 
   async function renameCounter(counterId, name) {
     if (!name.trim()) return
     setCounters(prev => prev.map(c => c.id === counterId ? { ...c, name: name.trim() } : c))
-    await supabase.from('counters').update({ name: name.trim() }).eq('id', counterId)
+    const { error } = await supabase.from('counters').update({ name: name.trim() }).eq('id', counterId)
+    if (error) showError('保存失败，请重试')
   }
 
   // ── Project edit ──
@@ -219,6 +226,7 @@ export default function ProjectPage({ user }) {
             onActiveImgChange={setActiveImg}
             onImagesLoaded={setImageCount}
             onUploadingChange={setUploading}
+            onUploadError={() => showError('上传失败，请重试')}
           />
         </div>
       </div>
@@ -326,6 +334,8 @@ export default function ProjectPage({ user }) {
       {showEdit && (
         <ProjectFormModal project={project} onSave={handleEdit} onClose={() => setShowEdit(false)} />
       )}
+
+      <Toast message={toastMessage} />
     </div>
   )
 }
